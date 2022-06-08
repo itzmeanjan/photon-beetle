@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 namespace photon {
 
@@ -62,6 +63,27 @@ subcells(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
   for (size_t i = 0; i < 64; i++) {
     state[i] = SBOX[state[i]];
   }
+}
+
+// Rotates position of the cells in each row by row index places, see figure 2.1
+// of Photon-Bettle AEAD specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+inline static void
+shift_rows(
+  uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
+)
+{
+  uint8_t s_prime[64];
+
+  for (size_t i = 0; i < 8; i++) {
+    const size_t off = i << 3;
+
+    for (size_t j = 0; j < 8; j++) {
+      s_prime[off ^ j] = state[off ^ ((j + i) & 7ul)];
+    }
+  }
+
+  std::memcpy(state, s_prime, sizeof(s_prime));
 }
 
 }
