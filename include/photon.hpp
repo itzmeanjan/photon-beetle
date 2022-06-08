@@ -5,7 +5,7 @@
 
 namespace photon {
 
-// Photon256 permutation has 12 rounds, see Photon-Bettle AEAD specification
+// Photon256 permutation has 12 rounds, see Photon-Beetle AEAD specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 constexpr size_t ROUNDS = 12ul;
 
@@ -20,7 +20,7 @@ constexpr uint8_t LS4B = 0x0f;
 // kept of lower ( read LSB ) 4 -bits of a byte
 constexpr uint8_t IRP = 0b00010011 & LS4B;
 
-// Photon256 permutation's round constants, see Photon-Bettle AEAD specification
+// Photon256 permutation's round constants, see Photon-Beetle AEAD specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 constexpr uint8_t RC[96] = {
   1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0, 4,  12, 13, 15, 11, 7,  6,  4,  0,
@@ -31,13 +31,13 @@ constexpr uint8_t RC[96] = {
 };
 
 // 4 -bit S-box applied to each cell of 8x8 permutation state matrix, see
-// Photon-Bettle AEAD specification
+// Photon-Beetle AEAD specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 constexpr uint8_t SBOX[16] = { 0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
                                0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2 };
 
 // M^8 = Serial[2, 4, 2, 11, 2, 8, 5, 6] ^ 8 | Serial[...] is defined in
-// section 1.1 of Photon-Bettle AEAD specification
+// section 1.1 of Photon-Beetle AEAD specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 constexpr uint8_t M8[64] = { 2,  4, 2,  11, 2,  8,  5,  6,  12, 9,  8,  13, 7,
                              7,  5, 2,  4,  4,  13, 13, 9,  4,  13, 9,  1,  6,
@@ -53,7 +53,7 @@ check_r(const size_t r)
 }
 
 // Add fixed constants to the cells of first column of 8x8 permutation state,
-// see figure 2.1 of Photon-Bettle AEAD specification
+// see figure 2.1 of Photon-Beetle AEAD specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 template<const size_t r>
 inline static void
@@ -74,7 +74,7 @@ add_constant(
 }
 
 // Applies 4 -bit S-box to each cell of 8x8 permutation state, see figure 2.1 of
-// Photon-Bettle AEAD specification
+// Photon-Beetle AEAD specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
 subcells(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
@@ -86,7 +86,7 @@ subcells(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 }
 
 // Rotates position of the cells in each row by row index places, see figure 2.1
-// of Photon-Bettle AEAD specification
+// of Photon-Beetle AEAD specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
 shift_rows(
@@ -131,7 +131,7 @@ gf16_mult(const uint8_t a, const uint8_t b)
 }
 
 // Linearly mixes all the columns independently using a serial matrix
-// multiplication on GF(2^4), see figure 2.1 of Photon-Bettle AEAD
+// multiplication on GF(2^4), see figure 2.1 of Photon-Beetle AEAD
 // specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
