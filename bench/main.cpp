@@ -1,4 +1,8 @@
 #include "bench_hash.hpp"
+#include "bench_photon.hpp"
+
+// registering Photon256 permutation routine for benchmark
+BENCHMARK(bench_photon_beetle::permute);
 
 // registering Photon-Beetle-Hash function for benchmark
 BENCHMARK(bench_photon_beetle::hash)->Arg(64);
