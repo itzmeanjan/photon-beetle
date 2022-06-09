@@ -133,17 +133,19 @@ mix_column_serial(
   uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
+  uint8_t s_prime[64] = {};
+
   for (size_t i = 0; i < 8; i++) {
-    uint8_t row[8] = { 0 };
+    const size_t off = i << 3;
 
     for (size_t j = 0; j < 8; j++) {
       for (size_t k = 0; k < 8; k++) {
-        row[j] ^= gf16_mult(M8[(i << 3) + k], state[(k << 3) + j]);
+        s_prime[off ^ j] ^= gf16_mult(M8[off ^ k], state[(k << 3) ^ j]);
       }
     }
-
-    std::memcpy(state + (i << 3), row, sizeof(row));
   }
+
+  std::memcpy(state, s_prime, sizeof(s_prime));
 }
 
 // Photon256 permutation composed of 12 rounds, see chapter 2 of Photon-Beetle
