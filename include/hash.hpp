@@ -125,39 +125,37 @@ hash(const uint8_t* const __restrict msg, // input message
 
   if (mlen == 0ul) {
     state[63] ^= (1 << 1);
-    tag(state, digest);
-    return;
-  }
-
-  if (mlen <= 16ul) {
-    for (size_t i = 0; i < mlen; i++) {
-      const size_t off = i << 1;
-
-      state[off] = msg[i] & photon::LS4B;
-      state[off ^ 1] = msg[i] >> 4;
-    }
-
-    constexpr uint8_t br0[2] = { 0, 0b1 };
-    constexpr uint8_t br1[2] = { 2, 1 };
-
-    const bool flg = mlen < 16ul;
-
-    const size_t off = mlen << 1;
-    state[off] = br0[flg];
-
-    state[63] ^= (br1[flg] << 1);
-    tag(state, digest);
   } else {
-    for (size_t i = 0; i < 16; i++) {
-      const size_t off = i << 1;
+    if (mlen <= 16ul) {
+      for (size_t i = 0; i < mlen; i++) {
+        const size_t off = i << 1;
 
-      state[off] = msg[i] & photon::LS4B;
-      state[off ^ 1] = msg[i] >> 4;
+        state[off] = msg[i] & photon::LS4B;
+        state[off ^ 1] = msg[i] >> 4;
+      }
+
+      constexpr uint8_t br0[2] = { 0, 0b1 };
+      constexpr uint8_t br1[2] = { 2, 1 };
+
+      const bool flg = mlen < 16ul;
+
+      const size_t off = mlen << 1;
+      state[off] = br0[flg];
+
+      state[63] ^= (br1[flg] << 1);
+    } else {
+      for (size_t i = 0; i < 16; i++) {
+        const size_t off = i << 1;
+
+        state[off] = msg[i] & photon::LS4B;
+        state[off ^ 1] = msg[i] >> 4;
+      }
+
+      absorb(state, msg + 16ul, mlen - 16ul);
     }
-
-    absorb(state, msg + 16ul, mlen - 16ul);
-    tag(state, digest);
   }
+
+  tag(state, digest);
 }
 
 }
