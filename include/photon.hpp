@@ -58,9 +58,10 @@ add_constant(
   const size_t off = r << 3;
 
 #if defined __clang__
-#pragma unroll 8
+#pragma clang loop vectorize(enable)
 #elif defined __GNUG__
 #pragma GCC unroll 8
+#pragma GCC ivdep
 #endif
   for (size_t i = 0; i < 8; i++) {
     state[i << 3] ^= RC[off ^ i];
@@ -75,7 +76,7 @@ subcells(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
   for (size_t i = 0; i < 64; i++) {
-    state[i] = SBOX[state[i]];
+    state[i] = SBOX[state[i] & LS4B];
   }
 }
 
@@ -87,17 +88,28 @@ shift_rows(
   uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
-  uint8_t s_prime[64];
-
+#if defined __clang__
+#pragma clang loop vectorize(enable)
+#elif defined __GNUG__
+#pragma GCC unroll 8
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < 8; i++) {
     const size_t off = i << 3;
+    uint8_t row[8];
 
+#if defined __clang__
+#pragma clang loop vectorize(enable)
+#elif defined __GNUG__
+#pragma GCC unroll 8
+#pragma GCC ivdep
+#endif
     for (size_t j = 0; j < 8; j++) {
-      s_prime[off ^ j] = state[off ^ ((j + i) & 7ul)];
+      row[j] = state[off ^ ((j + i) & 7ul)];
     }
-  }
 
-  std::memcpy(state, s_prime, sizeof(s_prime));
+    std::memcpy(state + off, row, sizeof(row));
+  }
 }
 
 // Modular multiplication in GF(2^4) with irreducible polynomial x^4 + x + 1
@@ -135,10 +147,28 @@ mix_column_serial(
 {
   uint8_t s_prime[64] = {};
 
+#if defined __clang__
+#pragma unroll 8
+#elif defined __GNUG__
+#pragma GCC unroll 8
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < 8; i++) {
     const size_t off = i << 3;
 
+#if defined __clang__
+#pragma unroll 8
+#elif defined __GNUG__
+#pragma GCC unroll 8
+#pragma GCC ivdep
+#endif
     for (size_t j = 0; j < 8; j++) {
+#if defined __clang__
+#pragma unroll 8
+#elif defined __GNUG__
+#pragma GCC unroll 8
+#pragma GCC ivdep
+#endif
       for (size_t k = 0; k < 8; k++) {
         s_prime[off ^ j] ^= gf16_mult(M8[off ^ k], state[(k << 3) ^ j]);
       }
