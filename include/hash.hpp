@@ -14,6 +14,12 @@ tag(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
 {
   photon::photon256(state);
 
+#if defined __clang__
+#pragma unroll 16
+#elif defined __GNUG__
+#pragma GCC unroll 16
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < 16; i++) {
     const size_t off = i << 1;
     tag[i] = (state[off ^ 1] << 4) | (state[off] & photon::LS4B);
@@ -21,6 +27,12 @@ tag(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
 
   photon::photon256(state);
 
+#if defined __clang__
+#pragma unroll 16
+#elif defined __GNUG__
+#pragma GCC unroll 16
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < 16; i++) {
     const size_t off = i << 1;
     tag[16 ^ i] = (state[off ^ 1] << 4) | (state[off] & photon::LS4B);
@@ -127,6 +139,11 @@ hash(const uint8_t* const __restrict msg, // input message
     state[63] ^= (1 << 1);
   } else {
     if (mlen <= 16ul) {
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
       for (size_t i = 0; i < mlen; i++) {
         const size_t off = i << 1;
 
@@ -144,6 +161,12 @@ hash(const uint8_t* const __restrict msg, // input message
 
       state[63] ^= (br1[flg] << 1);
     } else {
+#if defined __clang__
+#pragma unroll 16
+#elif defined __GNUG__
+#pragma GCC unroll 16
+#pragma GCC ivdep
+#endif
       for (size_t i = 0; i < 16; i++) {
         const size_t off = i << 1;
 
