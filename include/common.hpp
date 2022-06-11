@@ -76,7 +76,11 @@ absorb(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
     state[soff ^ 1] = w >> 4;
   }
 
-  state[63] ^= C << 1;
+  const uint8_t y = (state[63] << 4) | (state[62] & photon::LS4B);
+  const uint8_t w = y ^ (C << 5);
+
+  state[62] = w & photon::LS4B;
+  state[63] = w >> 4;
 }
 
 // Computes OUT -bytes tag, given 256 -bit permutation state, see
@@ -114,7 +118,8 @@ gen_tag(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 template<const size_t RATE>
 inline static void
-shuffle(uint8_t* const __restrict state) requires(check_po2(RATE))
+shuffle(const uint8_t* const __restrict state,
+        uint8_t* const __restrict shuffled) requires(check_po2(RATE))
 {
   if constexpr (RATE == 4ul) {
     const uint16_t s1 = (static_cast<uint16_t>(state[1] & photon::LS4B) << 12) |
@@ -124,15 +129,15 @@ shuffle(uint8_t* const __restrict state) requires(check_po2(RATE))
 
     const uint16_t s1_prime = std::rotr(s1, 1);
 
-    state[0] = state[4];
-    state[1] = state[5];
-    state[2] = state[6];
-    state[3] = state[7];
+    shuffled[0] = state[4];
+    shuffled[1] = state[5];
+    shuffled[2] = state[6];
+    shuffled[3] = state[7];
 
-    state[4] = static_cast<uint8_t>(s1_prime >> 8) & photon::LS4B;
-    state[5] = static_cast<uint8_t>(s1_prime >> 12) & photon::LS4B;
-    state[6] = static_cast<uint8_t>(s1_prime >> 0) & photon::LS4B;
-    state[7] = static_cast<uint8_t>(s1_prime >> 4) & photon::LS4B;
+    shuffled[4] = static_cast<uint8_t>(s1_prime >> 8) & photon::LS4B;
+    shuffled[5] = static_cast<uint8_t>(s1_prime >> 12) & photon::LS4B;
+    shuffled[6] = static_cast<uint8_t>(s1_prime >> 0) & photon::LS4B;
+    shuffled[7] = static_cast<uint8_t>(s1_prime >> 4) & photon::LS4B;
   } else if constexpr (RATE == 16ul) {
     constexpr size_t CNT = RATE >> 1;
 
@@ -155,7 +160,7 @@ shuffle(uint8_t* const __restrict state) requires(check_po2(RATE))
 #pragma GCC unroll 16
 #endif
     for (size_t i = 0; i < RATE; i++) {
-      state[i] = state[RATE ^ i];
+      shuffled[i] = state[RATE ^ i];
     }
 
 #if defined __clang__
@@ -169,8 +174,8 @@ shuffle(uint8_t* const __restrict state) requires(check_po2(RATE))
 
       const uint8_t w = static_cast<uint8_t>(s1_prime >> shift);
 
-      state[soff] = w & photon::LS4B;
-      state[soff ^ 1] = w >> 4;
+      shuffled[soff] = w & photon::LS4B;
+      shuffled[soff ^ 1] = w >> 4;
     }
   }
 }
@@ -185,11 +190,12 @@ rho(uint8_t* const __restrict state,
     uint8_t* const __restrict enc,
     const size_t tlen)
 {
-  shuffle<RATE>(state);
+  uint8_t tmp[RATE << 1];
+  shuffle<RATE>(state, tmp);
 
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
-    const uint8_t w = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
+    const uint8_t w = (tmp[soff ^ 1] << 4) | (tmp[soff] & photon::LS4B);
 
     enc[i] = w ^ txt[i];
   }
@@ -224,11 +230,12 @@ inv_rho(uint8_t* const __restrict state,
         uint8_t* const __restrict txt,
         const size_t tlen)
 {
-  shuffle<RATE>(state);
+  uint8_t tmp[RATE << 1];
+  shuffle<RATE>(state, tmp);
 
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
-    const uint8_t w = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
+    const uint8_t w = (tmp[soff ^ 1] << 4) | (tmp[soff] & photon::LS4B);
 
     txt[i] = w ^ enc[i];
   }
