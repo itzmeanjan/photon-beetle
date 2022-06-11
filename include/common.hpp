@@ -30,6 +30,11 @@ absorb(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
 
     photon::photon256(state);
 
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
     for (size_t j = 0; j < RATE; j++) {
       const size_t soff = j << 1;
 
@@ -46,6 +51,11 @@ absorb(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
 
     photon::photon256(state);
 
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
     for (size_t j = 0; j < rm_bytes; j++) {
       const size_t soff = j << 1;
 
@@ -85,7 +95,7 @@ gen_tag(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
     photon::photon256(state);
 
 #if defined __clang__
-#pragma unroll 16
+#pragma clang loop vectorize(enable)
 #elif defined __GNUG__
 #pragma GCC unroll 16
 #pragma GCC ivdep
