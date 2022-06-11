@@ -213,3 +213,42 @@ rho(uint8_t* const __restrict state,
   state[soff] = w & photon::LS4B;
   state[soff ^ 1] = w >> 4;
 }
+
+// Linear function `ρ^-1` used during verified decryption ( which is just
+// inverse of `ρ` ), as defined in section 3.1 of Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+template<const size_t RATE>
+inline static void
+inv_rho(uint8_t* const __restrict state,
+        const uint8_t* const __restrict enc,
+        uint8_t* const __restrict txt,
+        const size_t tlen)
+{
+  shuffle<RATE>(state);
+
+  for (size_t i = 0; i < tlen; i++) {
+    const size_t soff = i << 1;
+    const uint8_t w = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
+
+    txt[i] = w ^ enc[i];
+  }
+
+  for (size_t i = 0; i < tlen; i++) {
+    const size_t soff = i << 1;
+
+    const uint8_t y = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
+    const uint8_t w = txt[i] ^ y;
+
+    state[soff] = w & photon::LS4B;
+    state[soff ^ 1] = w >> 4;
+  }
+
+  constexpr uint8_t br[2] = { 0, 1 };
+  const size_t soff = tlen << 1;
+
+  const uint8_t y = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
+  const uint8_t w = y ^ br[tlen < RATE];
+
+  state[soff] = w & photon::LS4B;
+  state[soff ^ 1] = w >> 4;
+}
