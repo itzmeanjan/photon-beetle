@@ -89,6 +89,9 @@ encrypt(
 //
 // RATE is in terms of bytes, allowed values are {4, 16}.
 //
+// Note, before consuming decrypted bytes ensure presence of truth value in
+// returned boolean flag !
+//
 // See algorithm `PHOTON-Beetle-AEAD.DEC[r](K, N, A, C, T)` defined in
 // figure 3.6 of Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
