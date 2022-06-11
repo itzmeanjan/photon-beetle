@@ -174,3 +174,42 @@ shuffle(uint8_t* const __restrict state) requires(check_po2(RATE))
     }
   }
 }
+
+// Linear function `ρ` used during authenticated encryption, as defined in
+// section 3.1 of Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+template<const size_t RATE>
+inline static void
+rho(uint8_t* const __restrict state,
+    const uint8_t* const __restrict txt,
+    uint8_t* const __restrict enc,
+    const size_t tlen)
+{
+  shuffle<RATE>(state);
+
+  for (size_t i = 0; i < tlen; i++) {
+    const size_t soff = i << 1;
+    const uint8_t w = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
+
+    enc[i] = w ^ txt[i];
+  }
+
+  for (size_t i = 0; i < tlen; i++) {
+    const size_t soff = i << 1;
+
+    const uint8_t y = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
+    const uint8_t w = txt[i] ^ y;
+
+    state[soff] = w & photon::LS4B;
+    state[soff ^ 1] = w >> 4;
+  }
+
+  constexpr uint8_t br[2] = { 0, 1 };
+  const size_t soff = tlen << 1;
+
+  const uint8_t y = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
+  const uint8_t w = y ^ br[tlen < RATE];
+
+  state[soff] = w & photon::LS4B;
+  state[soff ^ 1] = w >> 4;
+}
