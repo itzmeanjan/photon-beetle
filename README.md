@@ -14,10 +14,12 @@ Here I'm keeping recommended versions of both Photon-Beetle-Hash & Photon-Beetle
 
 Photon-Beetle-Hash[32] | Photon-Beetle-AEAD[32, 128]
 --- | ---
-Given N ( >= 0) -bytes input message, this algorithm computes 32 -bytes digest | Given 16 -bytes secret key, 16 -bytes public message nonce, N -bytes associated data & M -bytes plain text, encryption algorithm computes M -bytes cipher text & 16 -bytes authentication tag. After that using decryption algorithm, cipher text can be deciphered back to plain text along with a boolean verification flag. AEAD scheme provides secrecy only for plain text but authenticity, integrity for both plain(/cipher) text & associated data.
+Given N ( >= 0) -bytes input message, this algorithm computes 32 -bytes digest | Given 16 -bytes secret key, 16 -bytes public message nonce, N ( >=0 ) -bytes associated data & M ( >=0 ) -bytes plain text, encryption algorithm computes M ( >=0 ) -bytes cipher text & 16 -bytes authentication tag. After that using decryption algorithm, cipher text can be deciphered back to plain text along with a boolean verification flag. AEAD scheme provides secrecy only for plain text but authenticity, integrity for both plain(/cipher) text & associated data.
 --- 
 
-> There are two recommended versions of Photon-Beetle-AEAD, which are only different in their RATE length i.e. how many bytes are consumed in every iteration. Also note, Photon-Beetle-Hash has only one recommended variant, which consumes 32 -bits of input message in very iteration ( absorption phase ).
+> Note, associated data is never encrypted.
+
+> There are two recommended versions of Photon-Beetle-AEAD, which are only different in their RATE length i.e. how many bytes are consumed in every iteration. Also note, Photon-Beetle-Hash has only one recommended variant, which consumes 32 -bits of input message in every iteration ( absorption phase ).
 
 > For understanding what's AEAD, see [here](https://en.wikipedia.org/wiki/Authenticated_encryption)
 
@@ -31,14 +33,14 @@ During this work, I followed Photon-Beetle specification, which was submitted to
 
 - C++ compiler such as `g++`/ `clang++`, with C++20 standard library
 
-```bash
+```fish
 $ g++ --version
 g++ (Ubuntu 11.2.0-19ubuntu1) 11.2.0
 ```
 
 - System development utilities like `make`/ `cmake`
 
-```bash
+```fish
 $ make --version
 GNU Make 3.81
 
@@ -48,14 +50,14 @@ cmake version 3.23.2
 
 - For testing functional correctness of Photon-Beetle implementation, you'll need `wget`, `unzip`, `python3`
 
-```bash
+```fish
 $ python3 --version
 Python 3.9.13
 ```
 
 - Install `python3` dependencies by issuing
 
-```bash
+```fish
 python3 -m pip install -r wrapper/python/requirements.txt --user
 ```
 
@@ -72,7 +74,7 @@ For checking functional correctness of Photon-Beetle implementation, I use test 
 
 For executing tests, issue
 
-```bash
+```fish
 make
 ```
 
@@ -80,13 +82,13 @@ make
 
 For benchmarking Photon-Beetle-{Hash, AEAD} on CPU based systems, issue
 
-```bash
+```fish
 make benchmark
 ```
 
 ### On ARM Cortex-A72
 
-```bash
+```fish
 2022-06-12T10:04:47+00:00
 Running ./bench/a.out
 Run on (16 X 166.66 MHz CPU s)
@@ -138,7 +140,7 @@ bench_photon_beetle::aead_decrypt<16>/32/4096   12448009 ns     12447931 ns     
 
 ### On Intel(R) Core(TM) i5-8279U CPU @ 2.40GHz
 
-```bash
+```fish
 2022-06-12T13:02:03+04:00
 Running ./bench/a.out
 Run on (8 X 2400 MHz CPU s)
