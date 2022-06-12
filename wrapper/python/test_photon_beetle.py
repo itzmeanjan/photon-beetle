@@ -162,8 +162,26 @@ def test_photon_beetle_aead_128_kat():
 
             cipher, tag = pb.photon_beetle_128_encrypt(key, nonce, ad, pt)
             flag, text = pb.photon_beetle_128_decrypt(key, nonce, tag, ad, cipher)
-
-            # assert (cipher + tag == ct), f"[Photon-Beetle-AEAD[128] KAT {cnt}] expected cipher to be 0x{ct.hex()}, found 0x{(cipher + tag).hex()} !"
+            
+            # @note
+            # Following assertion should ideally be enabled, though it's not at this moment because I discovered
+            # there's a mismatch in high nibble of last byte of computed cipher text & expected cipher text of some
+            # of Photon-Beetle-AEAD[128] KATs.
+            # 
+            # For example, in case of KAT 298 ( see file LWC_AEAD_KAT_128_128.txt in submission package ), 
+            # expected cipher text is 0xa7b9af5ba1aa580976, though computed one is 0xa7b9af5ba1aa5809f6.
+            # Notice the difference in 4 most significant bits of last byte.
+            #
+            # Similarly for KAT 299 ( of same file ), notice expected cipher text is 0x856bb76c8303baed04, though this implementation computed one is
+            # 0x856bb76c8303baed84. Difference is only in the most significant 4 bits of last byte. If you carefully notice the difference
+            # it's actually of 0x80 in last byte, for both cases.
+            #
+            # Note, this doesn't change computed authentication tag and with my implementation computed cipher text I can 
+            # decrypt back original bytes. As I've not yet figured it out, I'm disabling this test, in a future day
+            # when I'm able to resolve it, I'll reenable it. In the meantime, any help in deciphering it, will be appreciated.
+            #
+            # assert cipher == ct[:len(pt)], f"[Photon-Beetle-AEAD[128] KAT {cnt}] expected cipher to be 0x{ct[:len(pt)].hex()}, found 0x{cipher.hex()} !"
+            assert tag == ct[len(pt):], f"[Photon-Beetle-AEAD[128] KAT {cnt}] expected tag to be 0x{ct[len(pt):].hex()}, found 0x{tag.hex()} !"
             assert (pt == text and flag), f"[Photon-Beetle-AEAD[128] KAT {cnt}] expected plain text 0x{pt.hex()}, found 0x{text.hex()} !"
 
             # don't need this line, so discard
