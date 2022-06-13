@@ -1,6 +1,7 @@
 #pragma once
 #include "photon.hpp"
 #include <bit>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 
@@ -23,11 +24,17 @@ absorb(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
        const uint8_t C                      // domain seperation constant
        ) requires(check_po2(RATE))
 {
-  const size_t full_blk = mlen / RATE;
+#if defined __APPLE__
+  const size_t log2RATE = std::log2(RATE);
+#else
+  constexpr size_t log2RATE = std::log2(RATE);
+#endif
+
+  const size_t full_blk = mlen >> log2RATE;
   const size_t rm_bytes = mlen & (RATE - 1);
 
   for (size_t i = 0; i < full_blk; i++) {
-    const size_t moff = i * RATE;
+    const size_t moff = i << log2RATE;
 
     photon::photon256(state);
 
@@ -48,7 +55,7 @@ absorb(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
   }
 
   if (rm_bytes > 0ul) {
-    const size_t moff = full_blk * RATE;
+    const size_t moff = full_blk << log2RATE;
 
     photon::photon256(state);
 
@@ -122,30 +129,33 @@ shuffle(const uint8_t* const __restrict state,
         uint8_t* const __restrict shuffled) requires(check_po2(RATE))
 {
   if constexpr (RATE == 4ul) {
-    const uint16_t s1 = (static_cast<uint16_t>(state[1] & photon::LS4B) << 12) |
-                        (static_cast<uint16_t>(state[0] & photon::LS4B) << 8) |
-                        (static_cast<uint16_t>(state[3] & photon::LS4B) << 4) |
-                        (static_cast<uint16_t>(state[2] & photon::LS4B) << 0);
+    const uint16_t s1 = (static_cast<uint16_t>(state[3] & photon::LS4B) << 12) |
+                        (static_cast<uint16_t>(state[2] & photon::LS4B) << 8) |
+                        (static_cast<uint16_t>(state[1] & photon::LS4B) << 4) |
+                        (static_cast<uint16_t>(state[0] & photon::LS4B) << 0);
 
     const uint16_t s1_prime = std::rotr(s1, 1);
 
-    shuffled[0] = state[4];
-    shuffled[1] = state[5];
-    shuffled[2] = state[6];
-    shuffled[3] = state[7];
+    std::memcpy(shuffled, state + RATE, RATE);
 
-    shuffled[4] = static_cast<uint8_t>(s1_prime >> 8) & photon::LS4B;
-    shuffled[5] = static_cast<uint8_t>(s1_prime >> 12) & photon::LS4B;
-    shuffled[6] = static_cast<uint8_t>(s1_prime >> 0) & photon::LS4B;
-    shuffled[7] = static_cast<uint8_t>(s1_prime >> 4) & photon::LS4B;
+    shuffled[4] = static_cast<uint8_t>(s1_prime >> 0) & photon::LS4B;
+    shuffled[5] = static_cast<uint8_t>(s1_prime >> 4) & photon::LS4B;
+    shuffled[6] = static_cast<uint8_t>(s1_prime >> 8) & photon::LS4B;
+    shuffled[7] = static_cast<uint8_t>(s1_prime >> 12) & photon::LS4B;
   } else if constexpr (RATE == 16ul) {
     constexpr size_t CNT = RATE >> 1;
 
     uint64_t s1 = 0ul;
 
+#if defined __clang__
+#pragma unroll 8
+#elif defined __GNUG__
+#pragma GCC unroll 8
+#pragma GCC ivdep
+#endif
     for (size_t i = 0; i < CNT; i++) {
       const size_t soff = i << 1;
-      const size_t shift = (7 - i) << 3;
+      const size_t shift = i << 3;
 
       const uint8_t w = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
 
@@ -154,23 +164,17 @@ shuffle(const uint8_t* const __restrict state,
 
     const uint64_t s1_prime = std::rotr(s1, 1);
 
-#if defined __clang__
-#pragma unroll 16
-#elif defined __GNUG__
-#pragma GCC unroll 16
-#endif
-    for (size_t i = 0; i < RATE; i++) {
-      shuffled[i] = state[RATE ^ i];
-    }
+    std::memcpy(shuffled, state + RATE, RATE);
 
 #if defined __clang__
 #pragma unroll 8
 #elif defined __GNUG__
 #pragma GCC unroll 8
+#pragma GCC ivdep
 #endif
     for (size_t i = 0; i < CNT; i++) {
       const size_t soff = RATE ^ (i << 1);
-      const size_t shift = (7 - i) << 3;
+      const size_t shift = i << 3;
 
       const uint8_t w = static_cast<uint8_t>(s1_prime >> shift);
 
@@ -193,6 +197,11 @@ rho(uint8_t* const __restrict state,
   uint8_t tmp[RATE << 1];
   shuffle<RATE>(state, tmp);
 
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
     const uint8_t w = (tmp[soff ^ 1] << 4) | (tmp[soff] & photon::LS4B);
@@ -200,6 +209,11 @@ rho(uint8_t* const __restrict state,
     enc[i] = w ^ txt[i];
   }
 
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
 
@@ -233,6 +247,11 @@ inv_rho(uint8_t* const __restrict state,
   uint8_t tmp[RATE << 1];
   shuffle<RATE>(state, tmp);
 
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
     const uint8_t w = (tmp[soff ^ 1] << 4) | (tmp[soff] & photon::LS4B);
@@ -240,6 +259,11 @@ inv_rho(uint8_t* const __restrict state,
     txt[i] = w ^ enc[i];
   }
 
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
 

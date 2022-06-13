@@ -65,12 +65,10 @@ python3 -m pip install -r wrapper/python/requirements.txt --user
 
 ## Testing
 
-For checking functional correctness of Photon-Beetle implementation, I use test vectors submitted with NIST LWC submission package. 
+For checking functional correctness & conformance with standard of Photon-Beetle implementation, I use test vectors submitted with NIST LWC submission package.
 
 - For testing Photon-Beetle-Hash, I use same input bytes as provided in Known Answer Tests ( KATs ) & match computed digest(s) against provided ones.
-- While for Photon-Beetle-AEAD, I'm using given secret key, nonce, associated data & plain text ( in KATs ) and computing cipher text, authentication tag. After that I also attempt to decrypt cipher text back to plain text while checking for truth value in verification flag.
-
-> Consider taking a look at https://github.com/itzmeanjan/photon-beetle/commit/9d629e3 to understand why I've disable some assertions for Photon-Beetle-AEAD[128] implementation
+- While for Photon-Beetle-AEAD, I'm using given secret key, nonce, associated data & plain text ( in KATs ) and computing cipher text, authentication tag. After that I also attempt to decrypt cipher text back to plain text while checking for truth value in verification flag. Finally to ensure conformance, I make sure to check both computed cipher text and authentication tag with given ones in test vectors.
 
 For executing tests, issue
 
@@ -81,6 +79,8 @@ make
 ## Benchmarking
 
 For benchmarking Photon-Beetle-{Hash, AEAD} on CPU based systems, issue
+
+> If your CPU has scaling enabled, you may want to disable that, see [this](https://github.com/google/benchmark/blob/60b16f1/docs/user_guide.md#disabling-cpu-frequency-scaling) guide.
 
 ```fish
 make benchmark

@@ -34,6 +34,12 @@ encrypt(
 
   uint8_t state[64] = {};
 
+#if defined __clang__
+#pragma unroll 16
+#elif defined __GNUG__
+#pragma GCC unroll 16
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < 16; i++) {
     const size_t off0 = i << 1;
     const size_t off1 = 32ul ^ off0;
@@ -113,6 +119,12 @@ decrypt(
   uint8_t state[64] = {};
   uint8_t tag_[16] = {};
 
+#if defined __clang__
+#pragma unroll 16
+#elif defined __GNUG__
+#pragma GCC unroll 16
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < 16; i++) {
     const size_t off0 = i << 1;
     const size_t off1 = 32ul ^ off0;
