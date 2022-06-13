@@ -190,3 +190,20 @@ bench_photon_beetle::aead_decrypt<16>/32/2048    2104639 ns      2069352 ns     
 bench_photon_beetle::aead_encrypt<16>/32/4096    3990795 ns      3956385 ns          174 bytes_per_second=1018.92k/s
 bench_photon_beetle::aead_decrypt<16>/32/4096    4103685 ns      4065791 ns          172 bytes_per_second=991.505k/s
 ```
+
+## Usage
+
+Using Photon-Beetle C++ API is as easy as including proper header files & letting compiler know where it can find these header files, which is `./include` directory.
+
+If you're interested in Photon-Beetle-Hash implementation, consider importing `include/hash.hpp` in your project, while for Photon-Beetle-AEAD include `include/aead.hpp`.
+
+> Note, Photon-Beetle-Hash produces 32 -bytes digest of N -bytes input message | N >= 0.
+
+You may note, Photon-Beetle-AEAD routines i.e. encrypt/ decrypt take a template parameter called **RATE**, which can ∈ {4, 16}. If you want to use Photon-Beetle-AEAD-32 variant, which consumes 4 -bytes of message/ associated data in every iteration, ensure that you set `RATE = 4`. When interested in using Photon-Beetle-AEAD-128, set `RATE = 16`, so that permutation state can consume 16 -bytes of message/ associated data per iteration.
+
+> Note, for both Photon-Beetle-AEAD-32 & Photon-Beetle-AEAD-128, secret key/ public message nonce/ authentication tag is of byte length 16.
+
+I've written two examples demonstrating usage of Photon-Beetle-{Hash, AEAD} API.
+
+- For Photon-Beetle-Hash, see [here](https://github.com/itzmeanjan/photon-beetle/blob/618abea/example/hash.cpp)
+- For Photon-Beetle-AEAD-{32,128}, see [here](https://github.com/itzmeanjan/photon-beetle/blob/618abea/example/aead.cpp)
