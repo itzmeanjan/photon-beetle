@@ -86,6 +86,59 @@ For benchmarking Photon-Beetle-{Hash, AEAD} on CPU based systems, issue
 make benchmark
 ```
 
+### On AWS Graviton3
+
+```fish
+2022-06-14T14:44:29+00:00
+Running ./bench/a.out
+Run on (64 X 2100 MHz CPU s)
+CPU Caches:
+  L1 Data 64 KiB (x64)
+  L1 Instruction 64 KiB (x64)
+  L2 Unified 1024 KiB (x64)
+  L3 Unified 32768 KiB (x1)
+Load Average: 0.32, 0.12, 0.05
+--------------------------------------------------------------------------------------------------------
+Benchmark                                              Time             CPU   Iterations UserCounters...
+--------------------------------------------------------------------------------------------------------
+bench_photon_beetle::permute                       20424 ns        20423 ns        34255 bytes_per_second=2.98849M/s
+bench_photon_beetle::hash/64                      282453 ns       282446 ns         2475 bytes_per_second=221.281k/s
+bench_photon_beetle::hash/128                     605193 ns       605180 ns         1156 bytes_per_second=206.55k/s
+bench_photon_beetle::hash/256                    1250324 ns      1250301 ns          560 bytes_per_second=199.952k/s
+bench_photon_beetle::hash/512                    2540747 ns      2540700 ns          276 bytes_per_second=196.796k/s
+bench_photon_beetle::hash/1024                   5119943 ns      5119809 ns          137 bytes_per_second=195.32k/s
+bench_photon_beetle::hash/2048                  10281022 ns     10280715 ns           68 bytes_per_second=194.539k/s
+bench_photon_beetle::hash/4096                  20603549 ns     20603170 ns           34 bytes_per_second=194.145k/s
+bench_photon_beetle::aead_encrypt<4>/32/64        510254 ns       510236 ns         1373 bytes_per_second=183.738k/s
+bench_photon_beetle::aead_decrypt<4>/32/64        510431 ns       510422 ns         1371 bytes_per_second=183.671k/s
+bench_photon_beetle::aead_encrypt<4>/32/128       836688 ns       836663 ns          837 bytes_per_second=186.754k/s
+bench_photon_beetle::aead_decrypt<4>/32/128       836363 ns       836348 ns          836 bytes_per_second=186.824k/s
+bench_photon_beetle::aead_encrypt<4>/32/256      1488428 ns      1488382 ns          470 bytes_per_second=188.964k/s
+bench_photon_beetle::aead_decrypt<4>/32/256      1490086 ns      1490035 ns          470 bytes_per_second=188.754k/s
+bench_photon_beetle::aead_encrypt<4>/32/512      2792027 ns      2791915 ns          251 bytes_per_second=190.282k/s
+bench_photon_beetle::aead_decrypt<4>/32/512      2797604 ns      2797516 ns          249 bytes_per_second=189.901k/s
+bench_photon_beetle::aead_encrypt<4>/32/1024     5403749 ns      5403650 ns          130 bytes_per_second=190.843k/s
+bench_photon_beetle::aead_decrypt<4>/32/1024     5407260 ns      5407111 ns          129 bytes_per_second=190.721k/s
+bench_photon_beetle::aead_encrypt<4>/32/2048    10620043 ns     10619797 ns           66 bytes_per_second=191.27k/s
+bench_photon_beetle::aead_decrypt<4>/32/2048    10628861 ns     10628665 ns           66 bytes_per_second=191.111k/s
+bench_photon_beetle::aead_encrypt<4>/32/4096    21060184 ns     21059548 ns           33 bytes_per_second=191.421k/s
+bench_photon_beetle::aead_decrypt<4>/32/4096    21079033 ns     21078477 ns           33 bytes_per_second=191.25k/s
+bench_photon_beetle::aead_encrypt<16>/32/64       139099 ns       139096 ns         5038 bytes_per_second=673.995k/s
+bench_photon_beetle::aead_decrypt<16>/32/64       138575 ns       138571 ns         5054 bytes_per_second=676.549k/s
+bench_photon_beetle::aead_encrypt<16>/32/128      218712 ns       218705 ns         3205 bytes_per_second=714.432k/s
+bench_photon_beetle::aead_decrypt<16>/32/128      217572 ns       217557 ns         3211 bytes_per_second=718.202k/s
+bench_photon_beetle::aead_encrypt<16>/32/256      377498 ns       377484 ns         1855 bytes_per_second=745.065k/s
+bench_photon_beetle::aead_decrypt<16>/32/256      375439 ns       375426 ns         1863 bytes_per_second=749.149k/s
+bench_photon_beetle::aead_encrypt<16>/32/512      695579 ns       695559 ns         1006 bytes_per_second=763.775k/s
+bench_photon_beetle::aead_decrypt<16>/32/512      691943 ns       691930 ns         1012 bytes_per_second=767.78k/s
+bench_photon_beetle::aead_encrypt<16>/32/1024    1332400 ns      1332365 ns          526 bytes_per_second=774k/s
+bench_photon_beetle::aead_decrypt<16>/32/1024    1325516 ns      1325486 ns          528 bytes_per_second=778.017k/s
+bench_photon_beetle::aead_encrypt<16>/32/2048    2604263 ns      2604193 ns          269 bytes_per_second=779.992k/s
+bench_photon_beetle::aead_decrypt<16>/32/2048    2590267 ns      2590220 ns          270 bytes_per_second=784.2k/s
+bench_photon_beetle::aead_encrypt<16>/32/4096    5150199 ns      5150013 ns          136 bytes_per_second=782.765k/s
+bench_photon_beetle::aead_decrypt<16>/32/4096    5118956 ns      5118797 ns          137 bytes_per_second=787.539k/s
+```
+
 ### On ARM Cortex-A72
 
 ```fish
