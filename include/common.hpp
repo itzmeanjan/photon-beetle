@@ -124,12 +124,12 @@ shuffle(const uint8_t* const __restrict state,
 
     uint64_t s1 = 0ul;
 
-    // #if defined __clang__
-    // #pragma unroll 8
-    // #elif defined __GNUG__
-    // #pragma GCC unroll 8
-    // #pragma GCC ivdep
-    // #endif
+#if defined __clang__
+#pragma unroll 8
+#elif defined __GNUG__
+#pragma GCC unroll 8
+#pragma GCC ivdep
+#endif
     for (size_t i = 0; i < CNT; i++) {
       const size_t soff = i << 1;
       const size_t shift = i << 3;
@@ -143,12 +143,12 @@ shuffle(const uint8_t* const __restrict state,
 
     std::memcpy(shuffled, state + RATE, RATE);
 
-    // #if defined __clang__
-    // #pragma unroll 8
-    // #elif defined __GNUG__
-    // #pragma GCC unroll 8
-    // #pragma GCC ivdep
-    // #endif
+#if defined __clang__
+#pragma unroll 8
+#elif defined __GNUG__
+#pragma GCC unroll 8
+#pragma GCC ivdep
+#endif
     for (size_t i = 0; i < CNT; i++) {
       const size_t soff = RATE ^ (i << 1);
       const size_t shift = i << 3;
@@ -174,11 +174,11 @@ rho(uint8_t* const __restrict state,
   uint8_t tmp[RATE << 1];
   shuffle<RATE>(state, tmp);
 
-  // #if defined __clang__
-  // #pragma unroll
-  // #elif defined __GNUG__
-  // #pragma GCC ivdep
-  // #endif
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
     const uint8_t w = (tmp[soff ^ 1] << 4) | (tmp[soff] & photon::LS4B);
@@ -186,11 +186,11 @@ rho(uint8_t* const __restrict state,
     enc[i] = w ^ txt[i];
   }
 
-  // #if defined __clang__
-  // #pragma unroll
-  // #elif defined __GNUG__
-  // #pragma GCC ivdep
-  // #endif
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
 
@@ -224,11 +224,11 @@ inv_rho(uint8_t* const __restrict state,
   uint8_t tmp[RATE << 1];
   shuffle<RATE>(state, tmp);
 
-  // #if defined __clang__
-  // #pragma unroll
-  // #elif defined __GNUG__
-  // #pragma GCC ivdep
-  // #endif
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
     const uint8_t w = (tmp[soff ^ 1] << 4) | (tmp[soff] & photon::LS4B);
@@ -236,11 +236,11 @@ inv_rho(uint8_t* const __restrict state,
     txt[i] = w ^ enc[i];
   }
 
-  // #if defined __clang__
-  // #pragma unroll
-  // #elif defined __GNUG__
-  // #pragma GCC ivdep
-  // #endif
+#if defined __clang__
+#pragma unroll
+#elif defined __GNUG__
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < tlen; i++) {
     const size_t soff = i << 1;
 

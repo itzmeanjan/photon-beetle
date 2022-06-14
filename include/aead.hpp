@@ -1,6 +1,5 @@
 #pragma once
 #include "common.hpp"
-#include <algorithm>
 
 // Photon-Beetle-{Hash, AEAD} function(s)
 namespace photon_beetle {
