@@ -75,6 +75,12 @@ inline static void
 subcells(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
+#if defined __clang__
+#pragma unroll 16
+#elif defined __GNUG__
+#pragma GCC unroll 16
+#pragma GCC ivdep
+#endif
   for (size_t i = 0; i < 64; i++) {
     state[i] = SBOX[state[i] & LS4B];
   }
@@ -89,7 +95,7 @@ shift_rows(
 )
 {
 #if defined __clang__
-#pragma clang loop vectorize(enable)
+#pragma unroll 8
 #elif defined __GNUG__
 #pragma GCC unroll 8
 #pragma GCC ivdep
@@ -147,21 +153,9 @@ mix_column_serial(
 {
   uint8_t s_prime[64] = {};
 
-#if defined __clang__
-#pragma unroll 8
-#elif defined __GNUG__
-#pragma GCC unroll 8
-#pragma GCC ivdep
-#endif
   for (size_t i = 0; i < 8; i++) {
     const size_t off = i << 3;
 
-#if defined __clang__
-#pragma unroll 8
-#elif defined __GNUG__
-#pragma GCC unroll 8
-#pragma GCC ivdep
-#endif
     for (size_t j = 0; j < 8; j++) {
 #if defined __clang__
 #pragma unroll 8
