@@ -1,4 +1,12 @@
+#if !(defined PHOTON_BEETLE_HASH || defined PHOTON_BEETLE_AEAD)
+#define PHOTON_BEETLE_HASH
+#endif
+
+#if defined PHOTON_BEETLE_HASH
 #include "bench_fpga_hash.hpp"
+#elif defined PHOTON_BEETLE_AEAD
+#endif
+
 #include "table.hpp"
 #include <iostream>
 #include <sycl/ext/intel/fpga_extensions.hpp>

@@ -10,6 +10,9 @@
 // kernel. With both of these information ( i.e. amount of data in terms of
 // bytes and time to finish computation/ data tx ) one can compute processing/
 // transfer bandwidth ( say bytes/ second )
+//
+// Ensure SYCL queue has profiling enabled, which will be used for timing
+// execution of SYCL events
 static void
 bench_photon_beetle_hash_fpga(
   sycl::queue& q,                // SYCL queue
