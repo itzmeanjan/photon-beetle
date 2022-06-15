@@ -19,6 +19,8 @@ bench_photon_beetle_hash_fpga(
   size_t* const __restrict io    // measured amount of bytes processed
 )
 {
+  assert(q.has_property<sycl::property::queue::enable_profiling>());
+
   using evt = sycl::event;
 
   const size_t mlen = wi_cnt * per_wi_mlen;
