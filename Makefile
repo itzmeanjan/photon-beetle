@@ -41,8 +41,22 @@ bench/a.out: bench/cpu.cpp include/*.hpp
 benchmark: bench/a.out
 	./$<
 
+# FPGA Emulation on CPU
 bench/fpga_emu_bench.out: bench/fpga.cpp include/*.hpp
 	dpcpp $(CXXFLAGS) $(FPGA_EMU_FLAGS) $(OPTFLAGS) $(IFLAGS) $< -o $@
 
 fpga_emu_bench: bench/fpga_emu_bench.out
+	./$<
+
+# FPGA optimization report generation
+fpga_opt_bench: bench/fpga.cpp include/*.hpp
+	# output not supposed to be executed, instead consume report generated
+	# inside `bench/fpga_opt_bench.prj/reports/` diretory
+	dpcpp $(CXXFLAGS) $(FPGA_OPT_FLAGS) $(OPTFLAGS) $(IFLAGS) $< -o bench/$@.a
+
+# FPGA h/w synthesis & benchmark
+bench/fpga_hw_bench.out: bench/fpga.cpp include/*.hpp
+	dpcpp $(CXXFLAGS) $(FPGA_HW_FLAGS) $(OPTFLAGS) $(IFLAGS) -reuse-exe=$@ $< -o $@
+
+fpga_hw_bench: bench/fpga_hw_bench.out
 	./$<
