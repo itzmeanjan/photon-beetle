@@ -4,4 +4,5 @@
 *.so
 *.a
 *.o
+*.prj
 __pycache__
