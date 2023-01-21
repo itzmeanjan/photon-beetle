@@ -23,7 +23,8 @@ absorb(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
        const uint8_t* const __restrict msg, // input message to be absorbed
        const size_t mlen,                   // len(msg) | >= 0
        const uint8_t C                      // domain seperation constant
-       ) requires(check_po2(RATE))
+       )
+  requires(check_po2(RATE))
 {
   constexpr uint8_t br[2] = { 0, 1 };
 
@@ -74,7 +75,8 @@ template<const size_t OUT>
 inline static void
 gen_tag(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
         uint8_t* const __restrict tag    // OUT -bytes tag | OUT ∈ {16, 32}
-        ) requires(check_po2(OUT))
+        )
+  requires(check_po2(OUT))
 {
   constexpr size_t CNT = OUT >> 4;
 
@@ -103,7 +105,8 @@ gen_tag(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
 template<const size_t RATE>
 inline static void
 shuffle(const uint8_t* const __restrict state,
-        uint8_t* const __restrict shuffled) requires(check_po2(RATE))
+        uint8_t* const __restrict shuffled)
+  requires(check_po2(RATE))
 {
   if constexpr (RATE == 4ul) {
     const uint16_t s1 = (static_cast<uint16_t>(state[3] & photon::LS4B) << 12) |

@@ -1,6 +1,4 @@
-#include "bench_aead.hpp"
-#include "bench_hash.hpp"
-#include "bench_photon.hpp"
+#include "bench/bench_photon_beetle.hpp"
 
 // registering Photon256 permutation routine for benchmark
 BENCHMARK(bench_photon_beetle::permute);

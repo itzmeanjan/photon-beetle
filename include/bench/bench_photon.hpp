@@ -22,7 +22,7 @@ permute(benchmark::State& state)
     benchmark::ClobberMemory();
   }
 
-  state.SetBytesProcessed(static_cast<int64_t>(state.iterations() << 6));
+  state.SetBytesProcessed(state.iterations() * sizeof(pstate));
 }
 
 }
