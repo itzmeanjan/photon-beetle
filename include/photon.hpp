@@ -1,4 +1,5 @@
 #pragma once
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -107,27 +108,31 @@ shift_rows(
   uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
-  for (size_t i = 0; i < 8; i++) {
-    const size_t off = i * 8;
-    uint8_t row[8];
-
 #if defined __clang__
-    // Following
-    // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+  // Following
+  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
 
 #pragma clang loop unroll(enable)
 #elif defined __GNUG__
-    // Following
-    // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+  // Following
+  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
 
 #pragma GCC ivdep
 #pragma GCC unroll 8
 #endif
-    for (size_t j = 0; j < 8; j++) {
-      row[j] = state[off + ((j + i) & 7ul)];
+  for (size_t i = 0; i < 8; i++) {
+    const size_t off = i * 8;
+
+    uint64_t row;
+    std::memcpy(&row, state + off, sizeof(row));
+
+    if constexpr (std::endian::native == std::endian::little) {
+      row = std::rotr(row, off);
+    } else {
+      row = std::rotl(row, off);
     }
 
-    std::memcpy(state + off, row, sizeof(row));
+    std::memcpy(state + off, &row, sizeof(row));
   }
 }
 
