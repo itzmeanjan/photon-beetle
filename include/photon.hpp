@@ -23,28 +23,28 @@ constexpr uint8_t IRP = 0b00010011 & LS4B;
 
 // Photon256 permutation's round constants, see Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-constexpr uint8_t RC[96] = {
-  1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0, 4,  12, 13, 15, 11, 7,  6,  4,  0,
-  8,  9,  11, 15, 14, 15, 13, 9,  1,  0,  2, 6,  13, 12, 14, 10, 2,  3,  1,  5,
-  11, 10, 8,  12, 4,  5,  7,  3,  6,  7,  5, 1,  9,  8,  10, 14, 12, 13, 15, 11,
-  3,  2,  0,  4,  9,  8,  10, 14, 6,  7,  5, 1,  2,  3,  1,  5,  13, 12, 14, 10,
-  5,  4,  6,  2,  10, 11, 9,  13, 10, 11, 9, 13, 5,  4,  6,  2
-};
+constexpr uint8_t RC[]{ 1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0,  4,  12, 13,
+                        15, 11, 7,  6,  4,  0,  8,  9,  11, 15, 14, 15, 13, 9,
+                        1,  0,  2,  6,  13, 12, 14, 10, 2,  3,  1,  5,  11, 10,
+                        8,  12, 4,  5,  7,  3,  6,  7,  5,  1,  9,  8,  10, 14,
+                        12, 13, 15, 11, 3,  2,  0,  4,  9,  8,  10, 14, 6,  7,
+                        5,  1,  2,  3,  1,  5,  13, 12, 14, 10, 5,  4,  6,  2,
+                        10, 11, 9,  13, 10, 11, 9,  13, 5,  4,  6,  2 };
 
 // 4 -bit S-box applied to each cell of 8x8 permutation state matrix, see
 // Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-constexpr uint8_t SBOX[16] = { 0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
-                               0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2 };
+constexpr uint8_t SBOX[]{ 0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
+                          0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2 };
 
 // M^8 = Serial[2, 4, 2, 11, 2, 8, 5, 6] ^ 8 | Serial[...] is defined in
 // section 1.1 of Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-constexpr uint8_t M8[64] = { 2,  4, 2,  11, 2,  8,  5,  6,  12, 9,  8,  13, 7,
-                             7,  5, 2,  4,  4,  13, 13, 9,  4,  13, 9,  1,  6,
-                             5,  1, 12, 13, 15, 14, 15, 12, 9,  13, 14, 5,  14,
-                             13, 9, 14, 5,  15, 4,  12, 9,  6,  12, 2,  2,  10,
-                             3,  1, 1,  14, 15, 1,  13, 10, 5,  10, 2,  3 };
+constexpr uint8_t M8[]{ 2,  4, 2,  11, 2,  8,  5,  6,  12, 9,  8,  13, 7,
+                        7,  5, 2,  4,  4,  13, 13, 9,  4,  13, 9,  1,  6,
+                        5,  1, 12, 13, 15, 14, 15, 12, 9,  13, 14, 5,  14,
+                        13, 9, 14, 5,  15, 4,  12, 9,  6,  12, 2,  2,  10,
+                        3,  1, 1,  14, 15, 1,  13, 10, 5,  10, 2,  3 };
 
 // Add fixed constants to the cells of first column of 8x8 permutation state,
 // see figure 2.1 of Photon-Beetle specification
@@ -58,13 +58,20 @@ add_constant(
   const size_t off = r << 3;
 
 #if defined __clang__
+  // Following
+  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
 #pragma clang loop vectorize(enable)
 #elif defined __GNUG__
-#pragma GCC unroll 8
+  // Following
+  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
 #pragma GCC ivdep
+#pragma GCC unroll 8
 #endif
   for (size_t i = 0; i < 8; i++) {
-    state[i << 3] ^= RC[off ^ i];
+    state[i * 8] ^= RC[off + i];
   }
 }
 
@@ -76,10 +83,16 @@ subcells(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
 #if defined __clang__
-#pragma unroll 16
+  // Following
+  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
 #elif defined __GNUG__
-#pragma GCC unroll 16
+  // Following
+  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
 #pragma GCC ivdep
+#pragma GCC unroll 16
 #endif
   for (size_t i = 0; i < 64; i++) {
     state[i] = SBOX[state[i] & LS4B];
@@ -94,24 +107,24 @@ shift_rows(
   uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
-#if defined __clang__
-#pragma unroll 8
-#elif defined __GNUG__
-#pragma GCC unroll 8
-#pragma GCC ivdep
-#endif
   for (size_t i = 0; i < 8; i++) {
-    const size_t off = i << 3;
+    const size_t off = i * 8;
     uint8_t row[8];
 
 #if defined __clang__
-#pragma clang loop vectorize(enable)
+    // Following
+    // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
 #elif defined __GNUG__
-#pragma GCC unroll 8
+    // Following
+    // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
 #pragma GCC ivdep
+#pragma GCC unroll 8
 #endif
     for (size_t j = 0; j < 8; j++) {
-      row[j] = state[off ^ ((j + i) & 7ul)];
+      row[j] = state[off + ((j + i) & 7ul)];
     }
 
     std::memcpy(state + off, row, sizeof(row));
@@ -151,20 +164,26 @@ mix_column_serial(
   uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
-  uint8_t s_prime[64] = {};
+  uint8_t s_prime[64]{};
 
   for (size_t i = 0; i < 8; i++) {
-    const size_t off = i << 3;
+    const size_t off = i * 8;
 
     for (size_t j = 0; j < 8; j++) {
 #if defined __clang__
-#pragma unroll 8
+      // Following
+      // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
 #elif defined __GNUG__
-#pragma GCC unroll 8
+      // Following
+      // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
 #pragma GCC ivdep
+#pragma GCC unroll 8
 #endif
       for (size_t k = 0; k < 8; k++) {
-        s_prime[off ^ j] ^= gf16_mult(M8[off ^ k], state[(k << 3) ^ j]);
+        s_prime[off + j] ^= gf16_mult(M8[off + k], state[(k * 8) + j]);
       }
     }
   }
