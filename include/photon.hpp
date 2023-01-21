@@ -1,4 +1,5 @@
 #pragma once
+#include "utils.hpp"
 #include <bit>
 #include <cstddef>
 #include <cstdint>
@@ -24,13 +25,13 @@ constexpr uint8_t IRP = 0b00010011 & LS4B;
 
 // Photon256 permutation's round constants, see Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-constexpr uint8_t RC[]{ 1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0,  4,  12, 13,
-                        15, 11, 7,  6,  4,  0,  8,  9,  11, 15, 14, 15, 13, 9,
-                        1,  0,  2,  6,  13, 12, 14, 10, 2,  3,  1,  5,  11, 10,
-                        8,  12, 4,  5,  7,  3,  6,  7,  5,  1,  9,  8,  10, 14,
-                        12, 13, 15, 11, 3,  2,  0,  4,  9,  8,  10, 14, 6,  7,
-                        5,  1,  2,  3,  1,  5,  13, 12, 14, 10, 5,  4,  6,  2,
-                        10, 11, 9,  13, 10, 11, 9,  13, 5,  4,  6,  2 };
+constexpr uint64_t RC[]{ 1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0,  4,  12, 13,
+                         15, 11, 7,  6,  4,  0,  8,  9,  11, 15, 14, 15, 13, 9,
+                         1,  0,  2,  6,  13, 12, 14, 10, 2,  3,  1,  5,  11, 10,
+                         8,  12, 4,  5,  7,  3,  6,  7,  5,  1,  9,  8,  10, 14,
+                         12, 13, 15, 11, 3,  2,  0,  4,  9,  8,  10, 14, 6,  7,
+                         5,  1,  2,  3,  1,  5,  13, 12, 14, 10, 5,  4,  6,  2,
+                         10, 11, 9,  13, 10, 11, 9,  13, 5,  4,  6,  2 };
 
 // 4 -bit S-box applied to each cell of 8x8 permutation state matrix, see
 // Photon-Beetle specification
@@ -151,6 +152,30 @@ add_constant(
 {
   const size_t off = r << 3;
 
+  uint64_t tmp[8];
+  std::memcpy(tmp, state, sizeof(tmp));
+
+  // swap byte order on non little-endian platform
+  if constexpr (std::endian::native != std::endian::little) {
+
+#if defined __clang__
+    // Following
+    // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
+#pragma clang loop vectorize(enable)
+#elif defined __GNUG__
+    // Following
+    // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
+#pragma GCC ivdep
+#pragma GCC unroll 8
+#endif
+    for (size_t i = 0; i < 8; i++) {
+      tmp[i] = bswap64(tmp[i]);
+    }
+  }
+
 #if defined __clang__
   // Following
   // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
@@ -165,8 +190,10 @@ add_constant(
 #pragma GCC unroll 8
 #endif
   for (size_t i = 0; i < 8; i++) {
-    state[i * 8] ^= RC[off + i];
+    tmp[i] ^= RC[off + i];
   }
+
+  std::memcpy(state, tmp, sizeof(tmp));
 }
 
 // Applies 4 -bit S-box to each cell of 8x8 permutation state, see figure 2.1 of
