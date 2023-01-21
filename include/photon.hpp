@@ -228,11 +228,15 @@ shift_rows(
   uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
+  uint64_t tmp[8];
+  std::memcpy(tmp, state, sizeof(tmp));
+
 #if defined __clang__
   // Following
   // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
 
 #pragma clang loop unroll(enable)
+#pragma clang loop vectorize(enable)
 #elif defined __GNUG__
   // Following
   // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
@@ -241,19 +245,14 @@ shift_rows(
 #pragma GCC unroll 8
 #endif
   for (size_t i = 0; i < 8; i++) {
-    const size_t off = i * 8;
-
-    uint64_t row;
-    std::memcpy(&row, state + off, sizeof(row));
-
     if constexpr (std::endian::native == std::endian::little) {
-      row = std::rotr(row, off);
+      tmp[i] = std::rotr(tmp[i], i * 8);
     } else {
-      row = std::rotl(row, off);
+      tmp[i] = std::rotl(tmp[i], i * 8);
     }
-
-    std::memcpy(state + off, &row, sizeof(row));
   }
+
+  std::memcpy(state, tmp, sizeof(tmp));
 }
 
 // Linearly mixes all the columns independently using a serial matrix
