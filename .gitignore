@@ -5,3 +5,7 @@
 *.a
 *.o
 __pycache__
+
+# For Clangd
+compile_commands.json
+.cache
