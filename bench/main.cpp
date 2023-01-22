@@ -2,6 +2,7 @@
 
 // registering Photon256 permutation routine for benchmark
 BENCHMARK(bench_photon_beetle::permute);
+BENCHMARK(bench_photon_beetle::_permute);
 
 // registering Photon-Beetle-Hash function for benchmark
 BENCHMARK(bench_photon_beetle::hash)->Arg(64);

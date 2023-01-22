@@ -9,7 +9,7 @@ namespace bench_photon_beetle {
 // Benchmarks Photon-Beetle cryptographic hash function implementation for
 // random input of length N (>=0) -bytes | N is provided when setting up
 // benchmark
-static void
+void
 hash(benchmark::State& state)
 {
   const size_t mlen = static_cast<size_t>(state.range(0));

@@ -7,7 +7,7 @@
 namespace bench_photon_beetle {
 
 // Benchmarks Photon256 permutation routine
-static void
+void
 permute(benchmark::State& state)
 {
   uint8_t pstate[64];
@@ -17,6 +17,25 @@ permute(benchmark::State& state)
 
   for (auto _ : state) {
     photon::photon256(pstate);
+
+    benchmark::DoNotOptimize(pstate);
+    benchmark::ClobberMemory();
+  }
+
+  state.SetBytesProcessed(state.iterations() * sizeof(pstate));
+}
+
+// Benchmarks Photon256 permutation routine
+void
+_permute(benchmark::State& state)
+{
+  uint8_t pstate[32];
+
+  // generate initial random permutation state
+  random_data(pstate, 32);
+
+  for (auto _ : state) {
+    photon::_photon256(pstate);
 
     benchmark::DoNotOptimize(pstate);
     benchmark::ClobberMemory();

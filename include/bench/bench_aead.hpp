@@ -9,7 +9,7 @@ namespace bench_photon_beetle {
 // Benchmarks Photon-Beetle-AEAD[32, 128] instance's encrypt routine on CPU
 // based systems
 template<const size_t R>
-static void
+void
 aead_encrypt(benchmark::State& state)
 {
   const size_t dlen = static_cast<size_t>(state.range(0));
@@ -69,7 +69,7 @@ aead_encrypt(benchmark::State& state)
 // Benchmarks Photon-Beetle-AEAD[32, 128] instance's decrypt routine on CPU
 // based systems
 template<const size_t R>
-static void
+void
 aead_decrypt(benchmark::State& state)
 {
   const size_t dlen = static_cast<size_t>(state.range(0));
