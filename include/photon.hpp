@@ -33,6 +33,16 @@ constexpr uint64_t RC[]{ 1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0,  4,  12, 13,
                          5,  1,  2,  3,  1,  5,  13, 12, 14, 10, 5,  4,  6,  2,
                          10, 11, 9,  13, 10, 11, 9,  13, 5,  4,  6,  2 };
 
+// Photon256 permutation's round constants, see Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+constexpr uint32_t _RC[]{
+  1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0, 4,  12, 13, 15, 11, 7,  6,  4,  0,
+  8,  9,  11, 15, 14, 15, 13, 9,  1,  0,  2, 6,  13, 12, 14, 10, 2,  3,  1,  5,
+  11, 10, 8,  12, 4,  5,  7,  3,  6,  7,  5, 1,  9,  8,  10, 14, 12, 13, 15, 11,
+  3,  2,  0,  4,  9,  8,  10, 14, 6,  7,  5, 1,  2,  3,  1,  5,  13, 12, 14, 10,
+  5,  4,  6,  2,  10, 11, 9,  13, 10, 11, 9, 13, 5,  4,  6,  2
+};
+
 // 4 -bit S-box applied to each cell of 8x8 permutation state matrix, see
 // Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
@@ -191,6 +201,61 @@ add_constant(
 #endif
   for (size_t i = 0; i < 8; i++) {
     tmp[i] ^= RC[off + i];
+  }
+
+  std::memcpy(state, tmp, sizeof(tmp));
+}
+
+// Add fixed constants to the cells of first column of 8x4 permutation state,
+// see figure 2.1 of Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+inline static void
+_add_constant(
+  uint8_t* const __restrict state, // 8x4 permutation state ( 256 -bits )
+  const size_t r                   // round index | >= 0 && < 12
+)
+{
+  const size_t off = r << 3;
+
+  uint32_t tmp[8];
+  std::memcpy(tmp, state, sizeof(tmp));
+
+  // swap byte order on non little-endian platform
+  if constexpr (std::endian::native != std::endian::little) {
+
+#if defined __clang__
+    // Following
+    // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
+#pragma clang loop vectorize(enable)
+#elif defined __GNUG__
+    // Following
+    // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
+#pragma GCC ivdep
+#pragma GCC unroll 8
+#endif
+    for (size_t i = 0; i < 8; i++) {
+      tmp[i] = bswap32(tmp[i]);
+    }
+  }
+
+#if defined __clang__
+  // Following
+  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
+#pragma clang loop vectorize(enable)
+#elif defined __GNUG__
+  // Following
+  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
+#pragma GCC ivdep
+#pragma GCC unroll 8
+#endif
+  for (size_t i = 0; i < 8; i++) {
+    tmp[i] ^= _RC[off + i];
   }
 
   std::memcpy(state, tmp, sizeof(tmp));
