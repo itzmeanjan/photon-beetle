@@ -293,7 +293,7 @@ mix_column_serial(
 #pragma GCC ivdep
 #pragma GCC unroll 8
 #endif
-    for (size_t j = 0; j < 8; j++) {
+    for (size_t k = 0; k < 8; k++) {
 #if defined __clang__
       // Following
       // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
@@ -306,7 +306,7 @@ mix_column_serial(
 #pragma GCC ivdep
 #pragma GCC unroll 8
 #endif
-      for (size_t k = 0; k < 8; k++) {
+      for (size_t j = 0; j < 8; j++) {
         const uint8_t idx = (M8[off + k] << 4) | (state[(k * 8) + j] & LS4B);
         s_prime[off + j] ^= GF16_MUL_TAB[idx];
       }
