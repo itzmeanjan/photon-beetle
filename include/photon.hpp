@@ -603,4 +603,18 @@ photon256(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
   }
 }
 
+// Photon256 permutation composed of 12 rounds, applied on a state matrix of
+// dimension 8x4, see chapter 2 of Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+inline static void
+_photon256(uint8_t* const __restrict state)
+{
+  for (size_t i = 0; i < ROUNDS; i++) {
+    _add_constant(state, i);
+    _subcells(state);
+    _shift_rows(state);
+    _mix_column_serial(state);
+  }
+}
+
 }
