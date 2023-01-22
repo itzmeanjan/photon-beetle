@@ -439,6 +439,39 @@ shift_rows(
   std::memcpy(state, tmp, sizeof(tmp));
 }
 
+// Rotates position of the cells ( of 8x4 permutation state matrix ) in each row
+// by row index places, see figure 2.1 of Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+inline static void
+_shift_rows(uint8_t* const __restrict state)
+{
+  uint32_t tmp[8];
+  std::memcpy(tmp, state, sizeof(tmp));
+
+#if defined __clang__
+  // Following
+  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
+#pragma clang loop vectorize(enable)
+#elif defined __GNUG__
+  // Following
+  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
+#pragma GCC ivdep
+#pragma GCC unroll 8
+#endif
+  for (size_t i = 0; i < 8; i++) {
+    if constexpr (std::endian::native == std::endian::little) {
+      tmp[i] = std::rotr(tmp[i], i * 4);
+    } else {
+      tmp[i] = std::rotl(tmp[i], i * 4);
+    }
+  }
+
+  std::memcpy(state, tmp, sizeof(tmp));
+}
+
 // Linearly mixes all the columns independently using a serial matrix
 // multiplication on GF(2^4), see figure 2.1 of Photon-Beetle AEAD
 // specification
