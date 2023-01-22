@@ -6,11 +6,18 @@
 #include <cstddef>
 #include <cstdint>
 
-// Compile-time check for ensuring byte length is power of 2
-constexpr inline static bool
-check_po2(const size_t rate)
+// Compile-time check for ensuring that RATE ∈ {4, 16}
+inline static consteval bool
+check_rate(const size_t rate)
 {
-  return (rate & (rate - 1)) == 0;
+  return (rate == 4) || (rate == 16);
+}
+
+// Compile-time check for ensuring that OUT ∈ {16, 32}
+inline static consteval bool
+check_out(const size_t out)
+{
+  return (out == 16) || (out == 32);
 }
 
 // Absorbs N -bytes of input message into permutation state, see
@@ -24,9 +31,9 @@ absorb(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
        const size_t mlen,                   // len(msg) | >= 0
        const uint8_t C                      // domain seperation constant
        )
-  requires(check_po2(RATE))
+  requires(check_rate(RATE))
 {
-  constexpr uint8_t br[2] = { 0, 1 };
+  constexpr uint8_t br[]{ 0, 1 };
 
   for (size_t i = 0; i < mlen; i += RATE) {
     // effective byte length i.e. # -of bytes to be absorbed in this iteration
@@ -76,7 +83,7 @@ inline static void
 gen_tag(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
         uint8_t* const __restrict tag    // OUT -bytes tag | OUT ∈ {16, 32}
         )
-  requires(check_po2(OUT))
+  requires(check_out(OUT))
 {
   constexpr size_t CNT = OUT >> 4;
 
@@ -106,7 +113,7 @@ template<const size_t RATE>
 inline static void
 shuffle(const uint8_t* const __restrict state,
         uint8_t* const __restrict shuffled)
-  requires(check_po2(RATE))
+  requires(check_rate(RATE))
 {
   if constexpr (RATE == 4ul) {
     const uint16_t s1 = (static_cast<uint16_t>(state[3] & photon::LS4B) << 12) |
@@ -173,6 +180,7 @@ rho(uint8_t* const __restrict state,
     const uint8_t* const __restrict txt,
     uint8_t* const __restrict enc,
     const size_t tlen)
+  requires(check_rate(RATE))
 {
   uint8_t tmp[RATE << 1];
   shuffle<RATE>(state, tmp);
@@ -223,6 +231,7 @@ inv_rho(uint8_t* const __restrict state,
         const uint8_t* const __restrict enc,
         uint8_t* const __restrict txt,
         const size_t tlen)
+  requires(check_rate(RATE))
 {
   uint8_t tmp[RATE << 1];
   shuffle<RATE>(state, tmp);
