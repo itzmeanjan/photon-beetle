@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 
 // Photon256 permutation, used in Photon-Beetle-{AEAD, Hash}
 namespace photon {
@@ -154,6 +155,13 @@ constexpr uint8_t M8[]{ 2,  4, 2,  11, 2,  8,  5,  6,  12, 9,  8,  13, 7,
                         5,  1, 12, 13, 15, 14, 15, 12, 9,  13, 14, 5,  14,
                         13, 9, 14, 5,  15, 4,  12, 9,  6,  12, 2,  2,  10,
                         3,  1, 1,  14, 15, 1,  13, 10, 5,  10, 2,  3 };
+
+// M^8 = Serial[2, 4, 2, 11, 2, 8, 5, 6] ^ 8 | Serial[...] is defined in
+// section 1.1 of Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+constexpr uint8_t _M8[]{ 66,  178, 130, 101, 156, 216, 119, 37,  68,  221, 73,
+                         157, 97,  21,  220, 239, 207, 217, 94,  222, 233, 245,
+                         196, 105, 44,  162, 19,  225, 31,  173, 165, 50 };
 
 // Modular multiplication in GF(2^4) with irreducible polynomial x^4 + x + 1
 inline static constexpr uint8_t
@@ -531,6 +539,53 @@ mix_column_serial(
   }
 
   std::memcpy(state, s_prime, sizeof(s_prime));
+}
+
+// Linearly mixes all the columns independently using a serial matrix
+// multiplication on GF(2^4), see figure 2.1 of Photon-Beetle AEAD
+// specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+inline static void
+_mix_column_serial(uint8_t* const __restrict state)
+{
+  uint8_t tmp[64];
+
+#if defined __clang__
+  // Following
+  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
+#pragma clang loop vectorize(enable)
+#elif defined __GNUG__
+  // Following
+  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
+#pragma GCC ivdep
+#pragma GCC unroll 16
+#endif
+  for (size_t i = 0; i < 32; i++) {
+    tmp[2 * i] = state[i] & LS4B;
+    tmp[2 * i + 1] = state[i] >> 4;
+  }
+
+  mix_column_serial(tmp);
+
+#if defined __clang__
+  // Following
+  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
+#pragma clang loop vectorize(enable)
+#elif defined __GNUG__
+  // Following
+  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
+#pragma GCC ivdep
+#pragma GCC unroll 16
+#endif
+  for (size_t i = 0; i < 32; i++) {
+    state[i] = (tmp[2 * i + 1] << 4) | tmp[2 * i];
+  }
 }
 
 // Photon256 permutation composed of 12 rounds, see chapter 2 of Photon-Beetle
