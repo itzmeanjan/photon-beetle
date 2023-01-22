@@ -49,6 +49,103 @@ constexpr uint32_t _RC[]{
 constexpr uint8_t SBOX[]{ 0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
                           0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2 };
 
+// Compute 8 -bit S-box from 4 -bit S-box
+inline static consteval uint8_t
+get_8bit_sbox(const uint8_t a, const uint8_t b)
+{
+  return (SBOX[a & LS4B] << 4) | (SBOX[b & LS4B]);
+}
+
+// Compile-time compute 8 -bit S-box table
+constexpr uint8_t SBOX_8BIT[]{
+  get_8bit_sbox(0, 0),   get_8bit_sbox(0, 1),   get_8bit_sbox(0, 2),
+  get_8bit_sbox(0, 3),   get_8bit_sbox(0, 4),   get_8bit_sbox(0, 5),
+  get_8bit_sbox(0, 6),   get_8bit_sbox(0, 7),   get_8bit_sbox(0, 8),
+  get_8bit_sbox(0, 9),   get_8bit_sbox(0, 10),  get_8bit_sbox(0, 11),
+  get_8bit_sbox(0, 12),  get_8bit_sbox(0, 13),  get_8bit_sbox(0, 14),
+  get_8bit_sbox(0, 15),  get_8bit_sbox(1, 0),   get_8bit_sbox(1, 1),
+  get_8bit_sbox(1, 2),   get_8bit_sbox(1, 3),   get_8bit_sbox(1, 4),
+  get_8bit_sbox(1, 5),   get_8bit_sbox(1, 6),   get_8bit_sbox(1, 7),
+  get_8bit_sbox(1, 8),   get_8bit_sbox(1, 9),   get_8bit_sbox(1, 10),
+  get_8bit_sbox(1, 11),  get_8bit_sbox(1, 12),  get_8bit_sbox(1, 13),
+  get_8bit_sbox(1, 14),  get_8bit_sbox(1, 15),  get_8bit_sbox(2, 0),
+  get_8bit_sbox(2, 1),   get_8bit_sbox(2, 2),   get_8bit_sbox(2, 3),
+  get_8bit_sbox(2, 4),   get_8bit_sbox(2, 5),   get_8bit_sbox(2, 6),
+  get_8bit_sbox(2, 7),   get_8bit_sbox(2, 8),   get_8bit_sbox(2, 9),
+  get_8bit_sbox(2, 10),  get_8bit_sbox(2, 11),  get_8bit_sbox(2, 12),
+  get_8bit_sbox(2, 13),  get_8bit_sbox(2, 14),  get_8bit_sbox(2, 15),
+  get_8bit_sbox(3, 0),   get_8bit_sbox(3, 1),   get_8bit_sbox(3, 2),
+  get_8bit_sbox(3, 3),   get_8bit_sbox(3, 4),   get_8bit_sbox(3, 5),
+  get_8bit_sbox(3, 6),   get_8bit_sbox(3, 7),   get_8bit_sbox(3, 8),
+  get_8bit_sbox(3, 9),   get_8bit_sbox(3, 10),  get_8bit_sbox(3, 11),
+  get_8bit_sbox(3, 12),  get_8bit_sbox(3, 13),  get_8bit_sbox(3, 14),
+  get_8bit_sbox(3, 15),  get_8bit_sbox(4, 0),   get_8bit_sbox(4, 1),
+  get_8bit_sbox(4, 2),   get_8bit_sbox(4, 3),   get_8bit_sbox(4, 4),
+  get_8bit_sbox(4, 5),   get_8bit_sbox(4, 6),   get_8bit_sbox(4, 7),
+  get_8bit_sbox(4, 8),   get_8bit_sbox(4, 9),   get_8bit_sbox(4, 10),
+  get_8bit_sbox(4, 11),  get_8bit_sbox(4, 12),  get_8bit_sbox(4, 13),
+  get_8bit_sbox(4, 14),  get_8bit_sbox(4, 15),  get_8bit_sbox(5, 0),
+  get_8bit_sbox(5, 1),   get_8bit_sbox(5, 2),   get_8bit_sbox(5, 3),
+  get_8bit_sbox(5, 4),   get_8bit_sbox(5, 5),   get_8bit_sbox(5, 6),
+  get_8bit_sbox(5, 7),   get_8bit_sbox(5, 8),   get_8bit_sbox(5, 9),
+  get_8bit_sbox(5, 10),  get_8bit_sbox(5, 11),  get_8bit_sbox(5, 12),
+  get_8bit_sbox(5, 13),  get_8bit_sbox(5, 14),  get_8bit_sbox(5, 15),
+  get_8bit_sbox(6, 0),   get_8bit_sbox(6, 1),   get_8bit_sbox(6, 2),
+  get_8bit_sbox(6, 3),   get_8bit_sbox(6, 4),   get_8bit_sbox(6, 5),
+  get_8bit_sbox(6, 6),   get_8bit_sbox(6, 7),   get_8bit_sbox(6, 8),
+  get_8bit_sbox(6, 9),   get_8bit_sbox(6, 10),  get_8bit_sbox(6, 11),
+  get_8bit_sbox(6, 12),  get_8bit_sbox(6, 13),  get_8bit_sbox(6, 14),
+  get_8bit_sbox(6, 15),  get_8bit_sbox(7, 0),   get_8bit_sbox(7, 1),
+  get_8bit_sbox(7, 2),   get_8bit_sbox(7, 3),   get_8bit_sbox(7, 4),
+  get_8bit_sbox(7, 5),   get_8bit_sbox(7, 6),   get_8bit_sbox(7, 7),
+  get_8bit_sbox(7, 8),   get_8bit_sbox(7, 9),   get_8bit_sbox(7, 10),
+  get_8bit_sbox(7, 11),  get_8bit_sbox(7, 12),  get_8bit_sbox(7, 13),
+  get_8bit_sbox(7, 14),  get_8bit_sbox(7, 15),  get_8bit_sbox(8, 0),
+  get_8bit_sbox(8, 1),   get_8bit_sbox(8, 2),   get_8bit_sbox(8, 3),
+  get_8bit_sbox(8, 4),   get_8bit_sbox(8, 5),   get_8bit_sbox(8, 6),
+  get_8bit_sbox(8, 7),   get_8bit_sbox(8, 8),   get_8bit_sbox(8, 9),
+  get_8bit_sbox(8, 10),  get_8bit_sbox(8, 11),  get_8bit_sbox(8, 12),
+  get_8bit_sbox(8, 13),  get_8bit_sbox(8, 14),  get_8bit_sbox(8, 15),
+  get_8bit_sbox(9, 0),   get_8bit_sbox(9, 1),   get_8bit_sbox(9, 2),
+  get_8bit_sbox(9, 3),   get_8bit_sbox(9, 4),   get_8bit_sbox(9, 5),
+  get_8bit_sbox(9, 6),   get_8bit_sbox(9, 7),   get_8bit_sbox(9, 8),
+  get_8bit_sbox(9, 9),   get_8bit_sbox(9, 10),  get_8bit_sbox(9, 11),
+  get_8bit_sbox(9, 12),  get_8bit_sbox(9, 13),  get_8bit_sbox(9, 14),
+  get_8bit_sbox(9, 15),  get_8bit_sbox(10, 0),  get_8bit_sbox(10, 1),
+  get_8bit_sbox(10, 2),  get_8bit_sbox(10, 3),  get_8bit_sbox(10, 4),
+  get_8bit_sbox(10, 5),  get_8bit_sbox(10, 6),  get_8bit_sbox(10, 7),
+  get_8bit_sbox(10, 8),  get_8bit_sbox(10, 9),  get_8bit_sbox(10, 10),
+  get_8bit_sbox(10, 11), get_8bit_sbox(10, 12), get_8bit_sbox(10, 13),
+  get_8bit_sbox(10, 14), get_8bit_sbox(10, 15), get_8bit_sbox(11, 0),
+  get_8bit_sbox(11, 1),  get_8bit_sbox(11, 2),  get_8bit_sbox(11, 3),
+  get_8bit_sbox(11, 4),  get_8bit_sbox(11, 5),  get_8bit_sbox(11, 6),
+  get_8bit_sbox(11, 7),  get_8bit_sbox(11, 8),  get_8bit_sbox(11, 9),
+  get_8bit_sbox(11, 10), get_8bit_sbox(11, 11), get_8bit_sbox(11, 12),
+  get_8bit_sbox(11, 13), get_8bit_sbox(11, 14), get_8bit_sbox(11, 15),
+  get_8bit_sbox(12, 0),  get_8bit_sbox(12, 1),  get_8bit_sbox(12, 2),
+  get_8bit_sbox(12, 3),  get_8bit_sbox(12, 4),  get_8bit_sbox(12, 5),
+  get_8bit_sbox(12, 6),  get_8bit_sbox(12, 7),  get_8bit_sbox(12, 8),
+  get_8bit_sbox(12, 9),  get_8bit_sbox(12, 10), get_8bit_sbox(12, 11),
+  get_8bit_sbox(12, 12), get_8bit_sbox(12, 13), get_8bit_sbox(12, 14),
+  get_8bit_sbox(12, 15), get_8bit_sbox(13, 0),  get_8bit_sbox(13, 1),
+  get_8bit_sbox(13, 2),  get_8bit_sbox(13, 3),  get_8bit_sbox(13, 4),
+  get_8bit_sbox(13, 5),  get_8bit_sbox(13, 6),  get_8bit_sbox(13, 7),
+  get_8bit_sbox(13, 8),  get_8bit_sbox(13, 9),  get_8bit_sbox(13, 10),
+  get_8bit_sbox(13, 11), get_8bit_sbox(13, 12), get_8bit_sbox(13, 13),
+  get_8bit_sbox(13, 14), get_8bit_sbox(13, 15), get_8bit_sbox(14, 0),
+  get_8bit_sbox(14, 1),  get_8bit_sbox(14, 2),  get_8bit_sbox(14, 3),
+  get_8bit_sbox(14, 4),  get_8bit_sbox(14, 5),  get_8bit_sbox(14, 6),
+  get_8bit_sbox(14, 7),  get_8bit_sbox(14, 8),  get_8bit_sbox(14, 9),
+  get_8bit_sbox(14, 10), get_8bit_sbox(14, 11), get_8bit_sbox(14, 12),
+  get_8bit_sbox(14, 13), get_8bit_sbox(14, 14), get_8bit_sbox(14, 15),
+  get_8bit_sbox(15, 0),  get_8bit_sbox(15, 1),  get_8bit_sbox(15, 2),
+  get_8bit_sbox(15, 3),  get_8bit_sbox(15, 4),  get_8bit_sbox(15, 5),
+  get_8bit_sbox(15, 6),  get_8bit_sbox(15, 7),  get_8bit_sbox(15, 8),
+  get_8bit_sbox(15, 9),  get_8bit_sbox(15, 10), get_8bit_sbox(15, 11),
+  get_8bit_sbox(15, 12), get_8bit_sbox(15, 13), get_8bit_sbox(15, 14),
+  get_8bit_sbox(15, 15)
+};
+
 // M^8 = Serial[2, 4, 2, 11, 2, 8, 5, 6] ^ 8 | Serial[...] is defined in
 // section 1.1 of Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
@@ -210,9 +307,8 @@ add_constant(
 // see figure 2.1 of Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
-_add_constant(
-  uint8_t* const __restrict state, // 8x4 permutation state ( 256 -bits )
-  const size_t r                   // round index | >= 0 && < 12
+_add_constant(uint8_t* const __restrict state, // 8x4 permutation state
+              const size_t r                   // round index | >= 0 && < 12
 )
 {
   const size_t off = r << 3;
@@ -282,6 +378,29 @@ subcells(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 #endif
   for (size_t i = 0; i < 64; i++) {
     state[i] = SBOX[state[i] & LS4B];
+  }
+}
+
+// Applies 8 -bit S-box to each cell of 8x4 permutation state, see figure 2.1 of
+// Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+inline static void
+_subcells(uint8_t* const __restrict state)
+{
+#if defined __clang__
+  // Following
+  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+
+#pragma clang loop unroll(enable)
+#elif defined __GNUG__
+  // Following
+  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
+
+#pragma GCC ivdep
+#pragma GCC unroll 16
+#endif
+  for (size_t i = 0; i < 32; i++) {
+    state[i] = SBOX_8BIT[state[i]];
   }
 }
 
