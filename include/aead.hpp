@@ -1,10 +1,11 @@
 #pragma once
 #include "common.hpp"
-#include "photon.hpp"
 #include <cstring>
 
 // Photon-Beetle-{Hash, AEAD} function(s)
 namespace photon_beetle {
+
+using uint128_t = unsigned __int128;
 
 // Given expected authentication tag ( input for decrypt routine ) and computed
 // tag ( computed during decryption ), this routine performs a byte-wise match
@@ -15,26 +16,12 @@ verify_tag(const uint8_t* const __restrict expected, // 16 -bytes
            const uint8_t* const __restrict computed  // 16 -bytes
 )
 {
-  bool flg = false;
+  uint128_t v0, v1;
 
-#if defined __clang__
-  // Following
-  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+  std::memcpy(&v0, expected, sizeof(v0));
+  std::memcpy(&v1, computed, sizeof(v1));
 
-#pragma clang loop unroll(enable)
-#pragma clang loop vectorize(enable)
-#elif defined __GNUG__
-  // Following
-  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
-
-#pragma GCC ivdep
-#pragma GCC unroll 16
-#endif
-  for (size_t i = 0; i < 16; i++) {
-    flg |= static_cast<bool>(expected[i] ^ computed[i]);
-  }
-
-  return !flg;
+  return !static_cast<bool>(v0 ^ v1);
 }
 
 // Given 16 -bytes secret key, 16 -bytes public message nonce, N (>=0) -bytes
