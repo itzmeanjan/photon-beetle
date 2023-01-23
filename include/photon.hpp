@@ -26,23 +26,13 @@ constexpr uint8_t IRP = 0b00010011 & LS4B;
 
 // Photon256 permutation's round constants, see Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-constexpr uint64_t RC[]{ 1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0,  4,  12, 13,
+constexpr uint32_t RC[]{ 1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0,  4,  12, 13,
                          15, 11, 7,  6,  4,  0,  8,  9,  11, 15, 14, 15, 13, 9,
                          1,  0,  2,  6,  13, 12, 14, 10, 2,  3,  1,  5,  11, 10,
                          8,  12, 4,  5,  7,  3,  6,  7,  5,  1,  9,  8,  10, 14,
                          12, 13, 15, 11, 3,  2,  0,  4,  9,  8,  10, 14, 6,  7,
                          5,  1,  2,  3,  1,  5,  13, 12, 14, 10, 5,  4,  6,  2,
                          10, 11, 9,  13, 10, 11, 9,  13, 5,  4,  6,  2 };
-
-// Photon256 permutation's round constants, see Photon-Beetle specification
-// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-constexpr uint32_t _RC[]{
-  1,  0,  2,  6,  14, 15, 13, 9,  3,  2,  0, 4,  12, 13, 15, 11, 7,  6,  4,  0,
-  8,  9,  11, 15, 14, 15, 13, 9,  1,  0,  2, 6,  13, 12, 14, 10, 2,  3,  1,  5,
-  11, 10, 8,  12, 4,  5,  7,  3,  6,  7,  5, 1,  9,  8,  10, 14, 12, 13, 15, 11,
-  3,  2,  0,  4,  9,  8,  10, 14, 6,  7,  5, 1,  2,  3,  1,  5,  13, 12, 14, 10,
-  5,  4,  6,  2,  10, 11, 9,  13, 10, 11, 9, 13, 5,  4,  6,  2
-};
 
 // 4 -bit S-box applied to each cell of 8x8 permutation state matrix, see
 // Photon-Beetle specification
@@ -249,67 +239,12 @@ constexpr uint8_t GF16_MUL_TAB[]{
   gf16_mult(15, 12), gf16_mult(15, 13), gf16_mult(15, 14), gf16_mult(15, 15)
 };
 
-// Add fixed constants to the cells of first column of 8x8 permutation state,
-// see figure 2.1 of Photon-Beetle specification
-// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-inline static void
-add_constant(
-  uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bits )
-  const size_t r                   // round index | >= 0 && < 12
-)
-{
-  const size_t off = r << 3;
-
-  uint64_t tmp[8];
-  std::memcpy(tmp, state, sizeof(tmp));
-
-  // swap byte order on non little-endian platform
-  if constexpr (std::endian::native != std::endian::little) {
-
-#if defined __clang__
-    // Following
-    // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
-
-#pragma clang loop unroll(enable)
-#pragma clang loop vectorize(enable)
-#elif defined __GNUG__
-    // Following
-    // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
-
-#pragma GCC ivdep
-#pragma GCC unroll 8
-#endif
-    for (size_t i = 0; i < 8; i++) {
-      tmp[i] = bswap64(tmp[i]);
-    }
-  }
-
-#if defined __clang__
-  // Following
-  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
-
-#pragma clang loop unroll(enable)
-#pragma clang loop vectorize(enable)
-#elif defined __GNUG__
-  // Following
-  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
-
-#pragma GCC ivdep
-#pragma GCC unroll 8
-#endif
-  for (size_t i = 0; i < 8; i++) {
-    tmp[i] ^= RC[off + i];
-  }
-
-  std::memcpy(state, tmp, sizeof(tmp));
-}
-
 // Add fixed constants to the cells of first column of 8x4 permutation state,
 // see figure 2.1 of Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
-_add_constant(uint8_t* const __restrict state, // 8x4 permutation state
-              const size_t r                   // round index | >= 0 && < 12
+add_constant(uint8_t* const __restrict state, // 8x4 permutation state
+             const size_t r                   // round index | >= 0 && < 12
 )
 {
   const size_t off = r << 3;
@@ -352,41 +287,17 @@ _add_constant(uint8_t* const __restrict state, // 8x4 permutation state
 #pragma GCC unroll 8
 #endif
   for (size_t i = 0; i < 8; i++) {
-    tmp[i] ^= _RC[off + i];
+    tmp[i] ^= RC[off + i];
   }
 
   std::memcpy(state, tmp, sizeof(tmp));
-}
-
-// Applies 4 -bit S-box to each cell of 8x8 permutation state, see figure 2.1 of
-// Photon-Beetle specification
-// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-inline static void
-subcells(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
-)
-{
-#if defined __clang__
-  // Following
-  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
-
-#pragma clang loop unroll(enable)
-#elif defined __GNUG__
-  // Following
-  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
-
-#pragma GCC ivdep
-#pragma GCC unroll 16
-#endif
-  for (size_t i = 0; i < 64; i++) {
-    state[i] = SBOX[state[i] & LS4B];
-  }
 }
 
 // Applies 8 -bit S-box to each cell of 8x4 permutation state, see figure 2.1 of
 // Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
-_subcells(uint8_t* const __restrict state)
+subcells(uint8_t* const __restrict state)
 {
 #if defined __clang__
   // Following
@@ -405,46 +316,11 @@ _subcells(uint8_t* const __restrict state)
   }
 }
 
-// Rotates position of the cells in each row by row index places, see figure 2.1
-// of Photon-Beetle specification
-// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-inline static void
-shift_rows(
-  uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
-)
-{
-  uint64_t tmp[8];
-  std::memcpy(tmp, state, sizeof(tmp));
-
-#if defined __clang__
-  // Following
-  // https://clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
-
-#pragma clang loop unroll(enable)
-#pragma clang loop vectorize(enable)
-#elif defined __GNUG__
-  // Following
-  // https://gcc.gnu.org/onlinedocs/gcc/Loop-Specific-Pragmas.html#Loop-Specific-Pragmas
-
-#pragma GCC ivdep
-#pragma GCC unroll 8
-#endif
-  for (size_t i = 0; i < 8; i++) {
-    if constexpr (std::endian::native == std::endian::little) {
-      tmp[i] = std::rotr(tmp[i], i * 8);
-    } else {
-      tmp[i] = std::rotl(tmp[i], i * 8);
-    }
-  }
-
-  std::memcpy(state, tmp, sizeof(tmp));
-}
-
 // Rotates position of the cells ( of 8x4 permutation state matrix ) in each row
 // by row index places, see figure 2.1 of Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
-_shift_rows(uint8_t* const __restrict state)
+shift_rows(uint8_t* const __restrict state)
 {
   uint32_t tmp[8];
   std::memcpy(tmp, state, sizeof(tmp));
@@ -478,7 +354,7 @@ _shift_rows(uint8_t* const __restrict state)
 // specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
-mix_column_serial(
+mix_column_serial_inner(
   uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
 )
 {
@@ -539,7 +415,7 @@ mix_column_serial(
 // specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
-_mix_column_serial(uint8_t* const __restrict state)
+mix_column_serial(uint8_t* const __restrict state)
 {
   uint8_t tmp[64];
 
@@ -561,7 +437,7 @@ _mix_column_serial(uint8_t* const __restrict state)
     tmp[2 * i + 1] = state[i] >> 4;
   }
 
-  mix_column_serial(tmp);
+  mix_column_serial_inner(tmp);
 
 #if defined __clang__
   // Following
@@ -581,32 +457,17 @@ _mix_column_serial(uint8_t* const __restrict state)
   }
 }
 
-// Photon256 permutation composed of 12 rounds, see chapter 2 of Photon-Beetle
-// specification
+// Photon256 permutation composed of 12 rounds, applied on a state matrix of
+// dimension 8x4, see chapter 2 of Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
 inline static void
-photon256(uint8_t* const __restrict state // 8x8 permutation state ( 256 -bits )
-)
+photon256(uint8_t* const __restrict state)
 {
   for (size_t i = 0; i < ROUNDS; i++) {
     add_constant(state, i);
     subcells(state);
     shift_rows(state);
     mix_column_serial(state);
-  }
-}
-
-// Photon256 permutation composed of 12 rounds, applied on a state matrix of
-// dimension 8x4, see chapter 2 of Photon-Beetle specification
-// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-inline static void
-_photon256(uint8_t* const __restrict state)
-{
-  for (size_t i = 0; i < ROUNDS; i++) {
-    _add_constant(state, i);
-    _subcells(state);
-    _shift_rows(state);
-    _mix_column_serial(state);
   }
 }
 
