@@ -4,6 +4,7 @@
 // Photon-Beetle-{Hash, AEAD} function(s)
 namespace photon_beetle {
 
+static_assert(__SIZEOF_INT128__ == 16, "128 -bit unsigned integer is needed !");
 using uint128_t = unsigned __int128;
 
 // Photon-Beetle-Hash Digest is 32 -bytes wide, see section 3.3 of the

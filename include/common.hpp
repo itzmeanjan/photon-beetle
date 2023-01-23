@@ -5,6 +5,7 @@
 // Common dependency functions used in Photon-Beetle-{Hash, AEAD}
 namespace photon_common {
 
+static_assert(__SIZEOF_INT128__ == 16, "128 -bit unsigned integer is needed !");
 using uint128_t = unsigned __int128;
 
 // Compile-time check for ensuring that RATE ∈ {4, 16}
