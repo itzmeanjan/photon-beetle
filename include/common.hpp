@@ -311,6 +311,61 @@ shuffle(const uint8_t* const __restrict state,
   }
 }
 
+// Shuffle RATE ( must ∈ {4, 16} ) portion of 8x4 permutation state, see
+// section 3.1 ( and figure 3.1, where shuffle routine is defined ) of
+// Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+template<const size_t RATE>
+inline static void
+_shuffle(const uint8_t* const __restrict state,
+         uint8_t* const __restrict shuffled)
+  requires(check_rate(RATE))
+{
+  if constexpr (RATE == 4) {
+    static_assert(RATE == 4, "Rate portion of state must be 32 -bit wide");
+
+    if constexpr (std::endian::native == std::endian::little) {
+      uint16_t s1;
+      std::memcpy(&s1, state, RATE / 2);
+
+      const auto s1_prime = std::rotr(s1, 1);
+      std::memcpy(shuffled, state + (RATE / 2), RATE / 2);
+      std::memcpy(shuffled + (RATE / 2), &s1_prime, RATE / 2);
+    } else {
+      const uint16_t s1 = (static_cast<uint16_t>(state[1]) << 8) |
+                          (static_cast<uint16_t>(state[0]) << 0);
+
+      const auto s1_prime = std::rotr(s1, 1);
+      std::memcpy(shuffled, state + (RATE / 2), RATE / 2);
+      shuffled[2] = static_cast<uint8_t>(s1_prime);
+      shuffled[3] = static_cast<uint8_t>(s1_prime >> 8);
+    }
+  } else {
+    static_assert(RATE == 16, "Rate portion of state must be 128 -bit wide");
+
+    if constexpr (std::endian::native == std::endian::little) {
+      uint64_t s1;
+      std::memcpy(&s1, state, RATE / 2);
+
+      const auto s1_prime = std::rotr(s1, 1);
+      std::memcpy(shuffled, state + (RATE / 2), RATE / 2);
+      std::memcpy(shuffled + (RATE / 2), &s1_prime, RATE / 2);
+    } else {
+      uint64_t s1;
+      for (size_t i = 0; i < RATE / 2; i++) {
+        s1 |= static_cast<uint64_t>(state[i]) << (i * 8);
+      }
+
+      const auto s1_prime = std::rotr(s1, 1);
+      std::memcpy(shuffled, state + (RATE / 2), RATE / 2);
+
+      for (size_t i = 0; i < RATE / 2; i++) {
+        shuffled[(RATE / 2) + i] = static_cast<uint8_t>(s1_prime >> (i * 8));
+      }
+    }
+  }
+}
+
 // Linear function `ρ` used during authenticated encryption, as defined in
 // section 3.1 of Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
