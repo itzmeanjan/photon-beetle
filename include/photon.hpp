@@ -4,6 +4,10 @@
 #include <bit>
 #include <cstring>
 
+#if defined __SSSE3__
+#include <tmmintrin.h>
+#endif
+
 // Photon256 permutation, used in Photon-Beetle-{AEAD, Hash}
 //
 // Photon-Beetle Specification lives at
@@ -248,6 +252,33 @@ mix_column_serial(uint8_t* const __restrict state)
 {
   uint8_t tmp[64];
 
+#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && defined __SSSE3__
+
+  constexpr uint32_t mask0 = 0x0f0f0f0fu;
+  constexpr uint32_t mask1 = mask0 << 4;
+  constexpr uint64_t mask2 = 0x0703060205010400ul;
+
+#if defined __clang__
+#pragma clang loop unroll(enable)
+#elif defined __GNUG__
+#pragma GCC ivdep
+#pragma GCC unroll 8
+#endif
+  for (size_t i = 0; i < 8; i++) {
+    uint32_t row;
+    std::memcpy(&row, state + i * sizeof(row), sizeof(row));
+
+    const auto t0 = row & mask0;
+    const auto t1 = (row & mask1) >> 4;
+
+    const uint64_t t2 = ((uint64_t)t1 << 32) | (uint64_t)t0;
+    const uint64_t t3 = (uint64_t)_mm_shuffle_pi8((__m64)t2, (__m64)mask2);
+
+    std::memcpy(tmp + i * sizeof(t3), &t3, sizeof(t3));
+  }
+
+#else
+
 #if defined __clang__
 #pragma clang loop unroll(enable)
 #pragma clang loop vectorize(enable)
@@ -259,6 +290,8 @@ mix_column_serial(uint8_t* const __restrict state)
     tmp[2 * i] = state[i] & LS4B;
     tmp[2 * i + 1] = state[i] >> 4;
   }
+
+#endif
 
   mix_column_serial_inner(tmp);
 
