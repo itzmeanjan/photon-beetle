@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <cstring>
 
+using uint128_t = unsigned __int128;
+
 // Compile-time check for ensuring that RATE ∈ {4, 16}
 inline static consteval bool
 check_rate(const size_t rate)
@@ -74,6 +76,113 @@ absorb(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
     state[62] = w & photon::LS4B;
     state[63] = w >> 4;
   }
+}
+
+// Absorbs N (>=0) -bytes of input message into permutation state, see
+// `HASH<RATE>(IV, D, c0)` algorithm defined in figure 3.6 of Photon-Beetle
+// specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+template<const size_t RATE>
+inline static void
+_absorb(uint8_t* const __restrict state,     // 8x4 permutation state
+        const uint8_t* const __restrict msg, // input message to be absorbed
+        const size_t mlen,                   // len(msg) | >= 0
+        const uint8_t C                      // domain seperation constant
+        )
+  requires(check_rate(RATE))
+{
+  if constexpr (RATE == 4) {
+    static_assert(RATE == 4, "Rate portion of state must be 32 -bit wide");
+
+    const size_t full_blk_cnt = mlen / RATE;
+    const size_t full_blk_bytes = full_blk_cnt * RATE;
+
+    size_t off = 0;
+    while (off < full_blk_bytes) {
+      photon::_photon256(state);
+
+      uint32_t rate;
+      std::memcpy(&rate, state, RATE);
+
+      uint32_t mword;
+      std::memcpy(&mword, msg + off, RATE);
+
+      const auto nrate = rate ^ mword;
+      std::memcpy(state, &nrate, RATE);
+
+      off += RATE;
+    }
+
+    const size_t rm_bytes = mlen - off;
+    photon::_photon256(state);
+
+    if constexpr (std::endian::native == std::endian::little) {
+      uint32_t rate;
+      std::memcpy(&rate, state, RATE);
+
+      uint32_t mword = 1u << (rm_bytes * 8);
+      std::memcpy(&mword, msg + off, rm_bytes);
+
+      const auto nrate = rate ^ mword;
+      std::memcpy(state, &nrate, RATE);
+    } else {
+      uint32_t rate;
+      std::memcpy(&rate, state, RATE);
+
+      uint32_t mword = 16777216u >> (rm_bytes * 8);
+      std::memcpy(&mword, msg + off, rm_bytes);
+
+      const auto nrate = rate ^ mword;
+      std::memcpy(state, &nrate, RATE);
+    }
+  } else {
+    static_assert(RATE == 16, "Rate portion of state must be 128 -bit wide");
+
+    const size_t full_blk_cnt = mlen / RATE;
+    const size_t full_blk_bytes = full_blk_cnt * RATE;
+
+    size_t off = 0;
+    while (off < full_blk_bytes) {
+      photon::_photon256(state);
+
+      uint128_t rate;
+      std::memcpy(&rate, state, RATE);
+
+      uint128_t mword;
+      std::memcpy(&mword, msg + off, RATE);
+
+      const auto nrate = rate ^ mword;
+      std::memcpy(state, &nrate, RATE);
+
+      off += RATE;
+    }
+
+    const size_t rm_bytes = mlen - off;
+    photon::_photon256(state);
+
+    if constexpr (std::endian::native == std::endian::little) {
+      uint128_t rate;
+      std::memcpy(&rate, state, RATE);
+
+      uint128_t mword = static_cast<uint128_t>(1) << (rm_bytes * 8);
+      std::memcpy(&mword, msg + off, rm_bytes);
+
+      const auto nrate = rate ^ mword;
+      std::memcpy(state, &nrate, RATE);
+    } else {
+      uint128_t rate;
+      std::memcpy(&rate, state, RATE);
+
+      uint128_t mword = static_cast<uint128_t>(1) << ((15 - rm_bytes) * 8);
+      std::memcpy(&mword, msg + off, rm_bytes);
+
+      const auto nrate = rate ^ mword;
+      std::memcpy(state, &nrate, RATE);
+    }
+  }
+
+  // add domain seperation constant
+  state[31] ^= (C << 5);
 }
 
 // Computes OUT -bytes tag, given 256 -bit permutation state, see
