@@ -114,26 +114,28 @@ _absorb(uint8_t* const __restrict state,     // 8x4 permutation state
     }
 
     const size_t rm_bytes = mlen - off;
-    photon::_photon256(state);
+    if (rm_bytes > 0) {
+      photon::_photon256(state);
 
-    if constexpr (std::endian::native == std::endian::little) {
-      uint32_t rate;
-      std::memcpy(&rate, state, RATE);
+      if constexpr (std::endian::native == std::endian::little) {
+        uint32_t rate;
+        std::memcpy(&rate, state, RATE);
 
-      uint32_t mword = 1u << (rm_bytes * 8);
-      std::memcpy(&mword, msg + off, rm_bytes);
+        uint32_t mword = 1u << (rm_bytes * 8);
+        std::memcpy(&mword, msg + off, rm_bytes);
 
-      const auto nrate = rate ^ mword;
-      std::memcpy(state, &nrate, RATE);
-    } else {
-      uint32_t rate;
-      std::memcpy(&rate, state, RATE);
+        const auto nrate = rate ^ mword;
+        std::memcpy(state, &nrate, RATE);
+      } else {
+        uint32_t rate;
+        std::memcpy(&rate, state, RATE);
 
-      uint32_t mword = 16777216u >> (rm_bytes * 8);
-      std::memcpy(&mword, msg + off, rm_bytes);
+        uint32_t mword = 16777216u >> (rm_bytes * 8);
+        std::memcpy(&mword, msg + off, rm_bytes);
 
-      const auto nrate = rate ^ mword;
-      std::memcpy(state, &nrate, RATE);
+        const auto nrate = rate ^ mword;
+        std::memcpy(state, &nrate, RATE);
+      }
     }
   } else {
     static_assert(RATE == 16, "Rate portion of state must be 128 -bit wide");
@@ -158,26 +160,28 @@ _absorb(uint8_t* const __restrict state,     // 8x4 permutation state
     }
 
     const size_t rm_bytes = mlen - off;
-    photon::_photon256(state);
+    if (rm_bytes > 0) {
+      photon::_photon256(state);
 
-    if constexpr (std::endian::native == std::endian::little) {
-      uint128_t rate;
-      std::memcpy(&rate, state, RATE);
+      if constexpr (std::endian::native == std::endian::little) {
+        uint128_t rate;
+        std::memcpy(&rate, state, RATE);
 
-      uint128_t mword = static_cast<uint128_t>(1) << (rm_bytes * 8);
-      std::memcpy(&mword, msg + off, rm_bytes);
+        uint128_t mword = static_cast<uint128_t>(1) << (rm_bytes * 8);
+        std::memcpy(&mword, msg + off, rm_bytes);
 
-      const auto nrate = rate ^ mword;
-      std::memcpy(state, &nrate, RATE);
-    } else {
-      uint128_t rate;
-      std::memcpy(&rate, state, RATE);
+        const auto nrate = rate ^ mword;
+        std::memcpy(state, &nrate, RATE);
+      } else {
+        uint128_t rate;
+        std::memcpy(&rate, state, RATE);
 
-      uint128_t mword = static_cast<uint128_t>(1) << ((15 - rm_bytes) * 8);
-      std::memcpy(&mword, msg + off, rm_bytes);
+        uint128_t mword = static_cast<uint128_t>(1) << ((15 - rm_bytes) * 8);
+        std::memcpy(&mword, msg + off, rm_bytes);
 
-      const auto nrate = rate ^ mword;
-      std::memcpy(state, &nrate, RATE);
+        const auto nrate = rate ^ mword;
+        std::memcpy(state, &nrate, RATE);
+      }
     }
   }
 
