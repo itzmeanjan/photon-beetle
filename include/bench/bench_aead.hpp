@@ -2,6 +2,7 @@
 #include "aead.hpp"
 #include "utils.hpp"
 #include <benchmark/benchmark.h>
+#include <cassert>
 
 // Benchmark Photon-Beetle-{Hash, AEAD} routines
 namespace bench_photon_beetle {
@@ -28,14 +29,16 @@ aead_encrypt(benchmark::State& state)
   random_data(data, dlen);
   random_data(txt, mlen);
 
-  std::memset(tag, 0, 16);
-  std::memset(enc, 0, mlen);
-  std::memset(dec, 0, mlen);
-
   for (auto _ : state) {
     photon_beetle::encrypt<R>(key, nonce, data, dlen, txt, enc, mlen, tag);
 
+    benchmark::DoNotOptimize(key);
+    benchmark::DoNotOptimize(nonce);
+    benchmark::DoNotOptimize(data);
+    benchmark::DoNotOptimize(dlen);
+    benchmark::DoNotOptimize(txt);
     benchmark::DoNotOptimize(enc);
+    benchmark::DoNotOptimize(mlen);
     benchmark::DoNotOptimize(tag);
     benchmark::ClobberMemory();
   }
@@ -48,7 +51,7 @@ aead_encrypt(benchmark::State& state)
 
   bool f1 = false;
   for (size_t i = 0; i < mlen; i++) {
-    f1 |= txt[i] ^ dec[i];
+    f1 |= static_cast<bool>(txt[i] ^ dec[i]);
   }
 
   assert(!f1);
@@ -88,25 +91,28 @@ aead_decrypt(benchmark::State& state)
   random_data(data, dlen);
   random_data(txt, mlen);
 
-  std::memset(tag, 0, 16);
-  std::memset(enc, 0, mlen);
-  std::memset(dec, 0, mlen);
-
   photon_beetle::encrypt<R>(key, nonce, data, dlen, txt, enc, mlen, tag);
 
   for (auto _ : state) {
     bool f0 = false;
     f0 = photon_beetle::decrypt<R>(key, nonce, tag, data, dlen, enc, dec, mlen);
+    assert(f0);
 
-    benchmark::DoNotOptimize(f0);
+    benchmark::DoNotOptimize(key);
+    benchmark::DoNotOptimize(nonce);
+    benchmark::DoNotOptimize(tag);
+    benchmark::DoNotOptimize(data);
+    benchmark::DoNotOptimize(dlen);
+    benchmark::DoNotOptimize(enc);
     benchmark::DoNotOptimize(dec);
+    benchmark::DoNotOptimize(mlen);
     benchmark::ClobberMemory();
   }
 
   // --- test correctness ---
   bool f = false;
   for (size_t i = 0; i < mlen; i++) {
-    f |= txt[i] ^ dec[i];
+    f |= static_cast<bool>(txt[i] ^ dec[i]);
   }
 
   assert(!f);
