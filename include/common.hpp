@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 // Compile-time check for ensuring that RATE ∈ {4, 16}
 inline static consteval bool
@@ -103,6 +104,32 @@ gen_tag(uint8_t* const __restrict state, // 8x8 permutation state ( 256 -bit )
 
       tag[toff ^ j] = (state[soff ^ 1] << 4) | (state[soff] & photon::LS4B);
     }
+  }
+}
+
+// Computes OUT -bytes tag, given 256 -bit permutation state, see
+// `TAGτ (T0)` algorithm defined in figure 3.6 of Photon-Beetle specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+template<const size_t OUT>
+inline static void
+_gen_tag(uint8_t* const __restrict state, // 8x4 permutation state
+         uint8_t* const __restrict tag    // OUT -bytes tag | OUT ∈ {16, 32}
+         )
+  requires(check_out(OUT))
+{
+  if constexpr (OUT == 16) {
+    static_assert(OUT == 16, "Must compute 128 -bit tag !");
+
+    photon::_photon256(state);
+    std::memcpy(tag, state, OUT);
+  } else {
+    static_assert(OUT == 32, "Must compute 256 -bit tag !");
+
+    photon::_photon256(state);
+    std::memcpy(tag, state, OUT / 2);
+
+    photon::_photon256(state);
+    std::memcpy(tag + (OUT / 2), state, OUT / 2);
   }
 }
 
