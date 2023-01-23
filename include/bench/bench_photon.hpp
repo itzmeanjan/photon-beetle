@@ -22,7 +22,7 @@ permute(benchmark::State& state)
     benchmark::ClobberMemory();
   }
 
-  state.SetBytesProcessed(state.iterations() * sizeof(pstate));
+  state.SetBytesProcessed(state.iterations() * (sizeof(pstate) / 2));
 }
 
 // Benchmarks Photon256 permutation routine
