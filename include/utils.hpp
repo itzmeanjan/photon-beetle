@@ -5,6 +5,9 @@
 #include <random>
 #include <sstream>
 
+// Utility functions used in Photon-Beetle-{Hash, AEAD}
+namespace photon_utils {
+
 // Given a 32 -bit unsigned integer word, this routine swaps byte order and
 // returns byte swapped 32 -bit word.
 //
@@ -47,4 +50,6 @@ random_data(uint8_t* const data, const size_t len)
   for (size_t i = 0; i < len; i++) {
     data[i] = dis(gen);
   }
+}
+
 }

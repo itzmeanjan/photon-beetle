@@ -4,6 +4,8 @@
 // Photon-Beetle-{Hash, AEAD} function(s)
 namespace photon_beetle {
 
+using uint128_t = unsigned __int128;
+
 // Photon-Beetle-Hash Digest is 32 -bytes wide, see section 3.3 of the
 // specification
 constexpr size_t DIGEST_LEN = 32ul;
@@ -25,7 +27,7 @@ hash(const uint8_t* const __restrict msg, // input message
   // when hashing empty message
   if (mlen == 0) [[unlikely]] {
     state[31] ^= (1 << 5);
-    gen_tag<32>(state, digest);
+    photon_common::gen_tag<32>(state, digest);
 
     return;
   }
@@ -50,7 +52,7 @@ hash(const uint8_t* const __restrict msg, // input message
     const uint8_t c0 = br[flg];
 
     state[31] ^= (c0 << 5);
-    gen_tag<32>(state, digest);
+    photon_common::gen_tag<32>(state, digest);
 
     return;
   }
@@ -62,8 +64,8 @@ hash(const uint8_t* const __restrict msg, // input message
   constexpr uint8_t C[]{ 2, 1 };
   const uint8_t c0 = C[(rmlen & 3ul) == 0ul];
 
-  absorb<4>(state, msg + 16, rmlen, c0);
-  gen_tag<32>(state, digest);
+  photon_common::absorb<4>(state, msg + 16, rmlen, c0);
+  photon_common::gen_tag<32>(state, digest);
 }
 
 }

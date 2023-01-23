@@ -61,7 +61,7 @@ encrypt(
   const size_t mlen,                     // len(txt) = len(enc) >= 0
   uint8_t* const __restrict tag          // 16 -bytes authentication tag
   )
-  requires(check_rate(RATE))
+  requires(photon_common::check_rate(RATE))
 {
   uint8_t state[32];
 
@@ -70,7 +70,7 @@ encrypt(
 
   if ((dlen == 0) && (mlen == 0)) [[unlikely]] {
     state[31] ^= (1 << 5);
-    gen_tag<16>(state, tag);
+    photon_common::gen_tag<16>(state, tag);
 
     return;
   }
@@ -84,19 +84,21 @@ encrypt(
   const uint8_t C1 = (f2 && f3) ? 1 : f2 ? 2 : f3 ? 5 : 6;
 
   if (dlen > 0) [[likely]] {
-    absorb<RATE>(state, data, dlen, C0);
+    photon_common::absorb<RATE>(state, data, dlen, C0);
   }
 
   if (mlen > 0) [[likely]] {
     for (size_t off = 0; off < mlen; off += RATE) {
       photon::photon256(state);
-      rho<RATE>(state, txt + off, enc + off, std::min(RATE, mlen - off));
+
+      const auto len = std::min(RATE, mlen - off);
+      photon_common::rho<RATE>(state, txt + off, enc + off, len);
     }
 
     state[31] ^= (C1 << 5);
   }
 
-  gen_tag<16>(state, tag);
+  photon_common::gen_tag<16>(state, tag);
 }
 
 // Given 16 -bytes secret key, 16 -bytes public message nonce, 16 -bytes
@@ -124,7 +126,7 @@ decrypt(
   uint8_t* const __restrict txt,         // N -bytes decrypted text | N >= 0
   const size_t mlen                      // len(enc) = len(txt) >= 0
   )
-  requires(check_rate(RATE))
+  requires(photon_common::check_rate(RATE))
 {
   uint8_t state[32];
   uint8_t tag_[16];
@@ -134,7 +136,7 @@ decrypt(
 
   if ((dlen == 0) && (mlen == 0)) [[unlikely]] {
     state[31] ^= (1 << 5);
-    gen_tag<16>(state, tag_);
+    photon_common::gen_tag<16>(state, tag_);
 
     return verify_tag(tag, tag_);
   }
@@ -148,19 +150,21 @@ decrypt(
   const uint8_t C1 = (f2 && f3) ? 1 : f2 ? 2 : f3 ? 5 : 6;
 
   if (dlen > 0) [[likely]] {
-    absorb<RATE>(state, data, dlen, C0);
+    photon_common::absorb<RATE>(state, data, dlen, C0);
   }
 
   if (mlen > 0) [[likely]] {
     for (size_t off = 0; off < mlen; off += RATE) {
       photon::photon256(state);
-      inv_rho<RATE>(state, enc + off, txt + off, std::min(RATE, mlen - off));
+
+      const auto len = std::min(RATE, mlen - off);
+      photon_common::inv_rho<RATE>(state, enc + off, txt + off, len);
     }
 
     state[31] ^= (C1 << 5);
   }
 
-  gen_tag<16>(state, tag_);
+  photon_common::gen_tag<16>(state, tag_);
   const auto flg = verify_tag(tag, tag_);
   std::memset(txt, 0, !flg * mlen);
 

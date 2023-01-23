@@ -13,7 +13,7 @@ permute(benchmark::State& state)
   uint8_t pstate[32];
 
   // generate initial random permutation state
-  random_data(pstate, sizeof(pstate));
+  photon_utils::random_data(pstate, sizeof(pstate));
 
   for (auto _ : state) {
     photon::photon256(pstate);

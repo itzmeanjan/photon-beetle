@@ -17,7 +17,7 @@ hash(benchmark::State& state)
   uint8_t* msg = static_cast<uint8_t*>(std::malloc(mlen));
   uint8_t* out = static_cast<uint8_t*>(std::malloc(photon_beetle::DIGEST_LEN));
 
-  random_data(msg, mlen);
+  photon_utils::random_data(msg, mlen);
 
   for (auto _ : state) {
     photon_beetle::hash(msg, mlen, out);

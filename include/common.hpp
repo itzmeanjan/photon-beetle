@@ -1,11 +1,9 @@
 #pragma once
 #include "photon.hpp"
 #include <algorithm>
-#include <bit>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
+
+// Common dependency functions used in Photon-Beetle-{Hash, AEAD}
+namespace photon_common {
 
 using uint128_t = unsigned __int128;
 
@@ -271,4 +269,6 @@ inv_rho(uint8_t* const __restrict state,     // 8x4 permutation state
 
   constexpr uint8_t br[]{ 0, 1 };
   state[tlen] ^= br[tlen < RATE];
+}
+
 }

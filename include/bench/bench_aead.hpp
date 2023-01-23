@@ -24,10 +24,10 @@ aead_encrypt(benchmark::State& state)
   uint8_t* enc = static_cast<uint8_t*>(std::malloc(mlen));
   uint8_t* dec = static_cast<uint8_t*>(std::malloc(mlen));
 
-  random_data(key, 16);
-  random_data(nonce, 16);
-  random_data(data, dlen);
-  random_data(txt, mlen);
+  photon_utils::random_data(key, 16);
+  photon_utils::random_data(nonce, 16);
+  photon_utils::random_data(data, dlen);
+  photon_utils::random_data(txt, mlen);
 
   for (auto _ : state) {
     photon_beetle::encrypt<R>(key, nonce, data, dlen, txt, enc, mlen, tag);
@@ -86,10 +86,10 @@ aead_decrypt(benchmark::State& state)
   uint8_t* enc = static_cast<uint8_t*>(std::malloc(mlen));
   uint8_t* dec = static_cast<uint8_t*>(std::malloc(mlen));
 
-  random_data(key, 16);
-  random_data(nonce, 16);
-  random_data(data, dlen);
-  random_data(txt, mlen);
+  photon_utils::random_data(key, 16);
+  photon_utils::random_data(nonce, 16);
+  photon_utils::random_data(data, dlen);
+  photon_utils::random_data(txt, mlen);
 
   photon_beetle::encrypt<R>(key, nonce, data, dlen, txt, enc, mlen, tag);
 

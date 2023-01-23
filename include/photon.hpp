@@ -1,10 +1,7 @@
 #pragma once
 #include "utils.hpp"
 #include <bit>
-#include <cstddef>
-#include <cstdint>
 #include <cstring>
-#include <iostream>
 
 // Photon256 permutation, used in Photon-Beetle-{AEAD, Hash}
 namespace photon {
@@ -269,7 +266,7 @@ add_constant(uint8_t* const __restrict state, // 8x4 permutation state
 #pragma GCC unroll 8
 #endif
     for (size_t i = 0; i < 8; i++) {
-      tmp[i] = bswap32(tmp[i]);
+      tmp[i] = photon_utils::bswap32(tmp[i]);
     }
   }
 
