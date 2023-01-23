@@ -5,7 +5,7 @@
 
 // Compile it with
 //
-// g++ -std=c++20 -Wall -I ./include example/aead.cpp
+// g++ -std=c++20 -Wall -O3 -march=native -I ./include example/aead.cpp
 int
 main()
 {
@@ -26,10 +26,10 @@ main()
   uint8_t* enc = static_cast<uint8_t*>(std::malloc(mlen));
   uint8_t* dec = static_cast<uint8_t*>(std::malloc(mlen));
 
-  random_data(key, 16);   // generate random key
-  random_data(nonce, 16); // generate random nonce
-  random_data(dat, dlen); // generate random associated data
-  random_data(txt, mlen); // generate random plain text
+  photon_utils::random_data(key, 16);   // generate random key
+  photon_utils::random_data(nonce, 16); // generate random nonce
+  photon_utils::random_data(dat, dlen); // generate random associated data
+  photon_utils::random_data(txt, mlen); // generate random plain text
 
   // clean to be written memory allocations
   std::memset(tag, 0, 16);
@@ -51,13 +51,13 @@ main()
     assert((txt[i] ^ dec[i]) == 0);
   }
 
-  std::cout << "Key         : " << to_hex(key, 16) << std::endl;
-  std::cout << "Nonce       : " << to_hex(nonce, 16) << std::endl;
-  std::cout << "Data        : " << to_hex(dat, dlen) << std::endl;
-  std::cout << "Text        : " << to_hex(txt, mlen) << std::endl;
-  std::cout << "Tag         : " << to_hex(tag, 16) << std::endl;
-  std::cout << "Cipher      : " << to_hex(enc, mlen) << std::endl;
-  std::cout << "Decrypted   : " << to_hex(dec, mlen) << std::endl;
+  std::cout << "Key         : " << photon_utils::to_hex(key, 16) << std::endl;
+  std::cout << "Nonce       : " << photon_utils::to_hex(nonce, 16) << std::endl;
+  std::cout << "Data        : " << photon_utils::to_hex(dat, dlen) << std::endl;
+  std::cout << "Text        : " << photon_utils::to_hex(txt, mlen) << std::endl;
+  std::cout << "Tag         : " << photon_utils::to_hex(tag, 16) << std::endl;
+  std::cout << "Cipher      : " << photon_utils::to_hex(enc, mlen) << std::endl;
+  std::cout << "Decrypted   : " << photon_utils::to_hex(dec, mlen) << std::endl;
 
   // memory resources being released
   std::free(key);
