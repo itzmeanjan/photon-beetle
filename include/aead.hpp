@@ -5,8 +5,6 @@
 // Photon-Beetle-{Hash, AEAD} function(s)
 namespace photon_beetle {
 
-using uint128_t = unsigned __int128;
-
 // Given expected authentication tag ( input for decrypt routine ) and computed
 // tag ( computed during decryption ), this routine performs a byte-wise match
 // between those two byte arrays and returns boolean truth value if they match.
@@ -16,12 +14,31 @@ verify_tag(const uint8_t* const __restrict expected, // 16 -bytes
            const uint8_t* const __restrict computed  // 16 -bytes
 )
 {
+#if __SIZEOF_INT128__ == 16
+
+  using uint128_t = unsigned __int128;
   uint128_t v0, v1;
 
   std::memcpy(&v0, expected, sizeof(v0));
   std::memcpy(&v1, computed, sizeof(v1));
 
   return !static_cast<bool>(v0 ^ v1);
+
+#else
+
+  uint64_t v0_hi, v0_lo;
+
+  std::memcpy(&v0_lo, expected, sizeof(v0_lo));
+  std::memcpy(&v0_hi, expected + 8, sizeof(v0_hi));
+
+  uint64_t v1_hi, v1_lo;
+
+  std::memcpy(&v1_lo, computed, sizeof(v1_lo));
+  std::memcpy(&v1_hi, computed + 8, sizeof(v1_hi));
+
+  return !(static_cast<bool>(v0_lo ^ v1_lo) | static_cast<bool>(v0_hi ^ v1_hi));
+
+#endif
 }
 
 // Given 16 -bytes secret key, 16 -bytes public message nonce, N (>=0) -bytes
