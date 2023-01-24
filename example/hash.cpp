@@ -1,5 +1,4 @@
-#include "hash.hpp"
-#include "utils.hpp"
+#include "photon_beetle.hpp"
 #include <iostream>
 
 // Compile it with
@@ -8,8 +7,8 @@
 int
 main()
 {
-  constexpr size_t mlen = 64; // message length in bytes
-  constexpr size_t dlen = 32; // digest length in bytes
+  constexpr size_t mlen = 64;                        // message length in bytes
+  constexpr size_t dlen = photon_beetle::DIGEST_LEN; // digest length in bytes
 
   // allocate memory on heap
   uint8_t* msg = static_cast<uint8_t*>(std::malloc(mlen));

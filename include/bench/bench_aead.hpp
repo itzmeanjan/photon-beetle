@@ -1,6 +1,5 @@
 #pragma once
 #include "aead.hpp"
-#include "utils.hpp"
 #include <benchmark/benchmark.h>
 #include <cassert>
 

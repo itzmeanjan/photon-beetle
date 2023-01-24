@@ -1,6 +1,5 @@
 #pragma once
 #include "hash.hpp"
-#include "utils.hpp"
 #include <benchmark/benchmark.h>
 
 // Benchmark Photon-Beetle-{Hash, AEAD} routines

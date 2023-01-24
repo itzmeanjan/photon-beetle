@@ -5,6 +5,18 @@
 // Photon-Beetle-{Hash, AEAD} function(s)
 namespace photon_beetle {
 
+// Photon-Beetle-AEAD key length is 16 -bytes, see section 3.2 of the
+// specification
+constexpr size_t KEY_LEN = 16ul;
+
+// Photon-Beetle-AEAD nonce length is 16 -bytes, see section 3.2 of the
+// specification
+constexpr size_t NONCE_LEN = 16ul;
+
+// Photon-Beetle-AEAD tag length is 16 -bytes, see section 3.2 of the
+// specification
+constexpr size_t TAG_LEN = 16ul;
+
 // Given expected authentication tag ( input for decrypt routine ) and computed
 // tag ( computed during decryption ), this routine performs a byte-wise match
 // between those two byte arrays and returns boolean truth value if they match.
@@ -69,12 +81,12 @@ encrypt(
 {
   uint8_t state[32];
 
-  std::memcpy(state, nonce, 16);
-  std::memcpy(state + 16, key, 16);
+  std::memcpy(state, nonce, NONCE_LEN);
+  std::memcpy(state + NONCE_LEN, key, KEY_LEN);
 
   if ((dlen == 0) && (mlen == 0)) [[unlikely]] {
     state[31] ^= (1 << 5);
-    photon_common::gen_tag<16>(state, tag);
+    photon_common::gen_tag<TAG_LEN>(state, tag);
 
     return;
   }
@@ -102,7 +114,7 @@ encrypt(
     state[31] ^= (C1 << 5);
   }
 
-  photon_common::gen_tag<16>(state, tag);
+  photon_common::gen_tag<TAG_LEN>(state, tag);
 }
 
 // Given 16 -bytes secret key, 16 -bytes public message nonce, 16 -bytes
@@ -133,14 +145,14 @@ decrypt(
   requires(photon_common::check_rate(RATE))
 {
   uint8_t state[32];
-  uint8_t tag_[16];
+  uint8_t tag_[TAG_LEN];
 
-  std::memcpy(state, nonce, 16);
-  std::memcpy(state + 16, key, 16);
+  std::memcpy(state, nonce, NONCE_LEN);
+  std::memcpy(state + NONCE_LEN, key, KEY_LEN);
 
   if ((dlen == 0) && (mlen == 0)) [[unlikely]] {
     state[31] ^= (1 << 5);
-    photon_common::gen_tag<16>(state, tag_);
+    photon_common::gen_tag<TAG_LEN>(state, tag_);
 
     return verify_tag(tag, tag_);
   }
@@ -168,7 +180,7 @@ decrypt(
     state[31] ^= (C1 << 5);
   }
 
-  photon_common::gen_tag<16>(state, tag_);
+  photon_common::gen_tag<TAG_LEN>(state, tag_);
   const auto flg = verify_tag(tag, tag_);
   std::memset(txt, 0, !flg * mlen);
 
