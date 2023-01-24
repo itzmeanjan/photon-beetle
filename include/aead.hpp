@@ -1,8 +1,57 @@
 #pragma once
 #include "common.hpp"
+#include <cstring>
 
 // Photon-Beetle-{Hash, AEAD} function(s)
 namespace photon_beetle {
+
+// Photon-Beetle-AEAD key length is 16 -bytes, see section 3.2 of the
+// specification
+constexpr size_t KEY_LEN = 16ul;
+
+// Photon-Beetle-AEAD nonce length is 16 -bytes, see section 3.2 of the
+// specification
+constexpr size_t NONCE_LEN = 16ul;
+
+// Photon-Beetle-AEAD tag length is 16 -bytes, see section 3.2 of the
+// specification
+constexpr size_t TAG_LEN = 16ul;
+
+// Given expected authentication tag ( input for decrypt routine ) and computed
+// tag ( computed during decryption ), this routine performs a byte-wise match
+// between those two byte arrays and returns boolean truth value if they match.
+// Otherwise it returns false.
+inline static bool
+verify_tag(const uint8_t* const __restrict expected, // 16 -bytes
+           const uint8_t* const __restrict computed  // 16 -bytes
+)
+{
+#if __SIZEOF_INT128__ == 16
+
+  using uint128_t = unsigned __int128;
+  uint128_t v0, v1;
+
+  std::memcpy(&v0, expected, sizeof(v0));
+  std::memcpy(&v1, computed, sizeof(v1));
+
+  return !static_cast<bool>(v0 ^ v1);
+
+#else
+
+  uint64_t v0_hi, v0_lo;
+
+  std::memcpy(&v0_lo, expected, sizeof(v0_lo));
+  std::memcpy(&v0_hi, expected + 8, sizeof(v0_hi));
+
+  uint64_t v1_hi, v1_lo;
+
+  std::memcpy(&v1_lo, computed, sizeof(v1_lo));
+  std::memcpy(&v1_hi, computed + 8, sizeof(v1_hi));
+
+  return !(static_cast<bool>(v0_lo ^ v1_lo) | static_cast<bool>(v0_hi ^ v1_hi));
+
+#endif
+}
 
 // Given 16 -bytes secret key, 16 -bytes public message nonce, N (>=0) -bytes
 // associated data & M (>=0) -bytes plain text, this routine computes M -bytes
@@ -27,64 +76,45 @@ encrypt(
   uint8_t* const __restrict enc,         // N -bytes cipher text | N >= 0
   const size_t mlen,                     // len(txt) = len(enc) >= 0
   uint8_t* const __restrict tag          // 16 -bytes authentication tag
-)
+  )
+  requires(photon_common::check_rate(RATE))
 {
-  static_assert((RATE == 4) || (RATE == 16), "Only Photon-Beetle-AEAD{32,128}");
+  uint8_t state[32];
 
-  uint8_t state[64] = {};
+  std::memcpy(state, nonce, NONCE_LEN);
+  std::memcpy(state + NONCE_LEN, key, KEY_LEN);
 
-#if defined __clang__
-#pragma unroll 16
-#elif defined __GNUG__
-#pragma GCC unroll 16
-#pragma GCC ivdep
-#endif
-  for (size_t i = 0; i < 16; i++) {
-    const size_t off0 = i << 1;
-    const size_t off1 = 32ul ^ off0;
-
-    state[off0] = nonce[i] & photon::LS4B;
-    state[off0 ^ 1] = nonce[i] >> 4;
-
-    state[off1] = key[i] & photon::LS4B;
-    state[off1 ^ 1] = key[i] >> 4;
-  }
-
-  if ((dlen == 0ul) && (mlen == 0ul)) {
-    state[63] ^= 1 << 1;
-    gen_tag<16ul>(state, tag);
+  if ((dlen == 0) && (mlen == 0)) [[unlikely]] {
+    state[31] ^= (1 << 5);
+    photon_common::gen_tag<TAG_LEN>(state, tag);
 
     return;
   }
 
   const bool f0 = mlen > 0;
   const bool f1 = (dlen & (RATE - 1)) == 0;
-
-  const uint8_t C0 = (f0 && f1) ? 1 : f0 ? 2 : f1 ? 3 : 4;
-
   const bool f2 = dlen > 0;
   const bool f3 = (mlen & (RATE - 1)) == 0;
 
+  const uint8_t C0 = (f0 && f1) ? 1 : f0 ? 2 : f1 ? 3 : 4;
   const uint8_t C1 = (f2 && f3) ? 1 : f2 ? 2 : f3 ? 5 : 6;
 
-  if (dlen > 0) {
-    absorb<RATE>(state, data, dlen, C0);
+  if (dlen > 0) [[likely]] {
+    photon_common::absorb<RATE>(state, data, dlen, C0);
   }
 
-  if (mlen > 0) {
-    for (size_t i = 0; i < mlen; i += RATE) {
+  if (mlen > 0) [[likely]] {
+    for (size_t off = 0; off < mlen; off += RATE) {
       photon::photon256(state);
-      rho<RATE>(state, txt + i, enc + i, std::min(RATE, mlen - i));
+
+      const auto len = std::min(RATE, mlen - off);
+      photon_common::rho<RATE>(state, txt + off, enc + off, len);
     }
 
-    const uint8_t y = (state[63] << 4) | (state[62] & photon::LS4B);
-    const uint8_t w = y ^ (C1 << 5);
-
-    state[62] = w & photon::LS4B;
-    state[63] = w >> 4;
+    state[31] ^= (C1 << 5);
   }
 
-  gen_tag<16ul>(state, tag);
+  photon_common::gen_tag<TAG_LEN>(state, tag);
 }
 
 // Given 16 -bytes secret key, 16 -bytes public message nonce, 16 -bytes
@@ -111,77 +141,50 @@ decrypt(
   const uint8_t* const __restrict enc,   // N -bytes cipher text | N >= 0
   uint8_t* const __restrict txt,         // N -bytes decrypted text | N >= 0
   const size_t mlen                      // len(enc) = len(txt) >= 0
-)
+  )
+  requires(photon_common::check_rate(RATE))
 {
-  static_assert((RATE == 4) || (RATE == 16), "Only Photon-Beetle-AEAD{32,128}");
+  uint8_t state[32];
+  uint8_t tag_[TAG_LEN];
 
-  uint8_t state[64] = {};
-  uint8_t tag_[16] = {};
+  std::memcpy(state, nonce, NONCE_LEN);
+  std::memcpy(state + NONCE_LEN, key, KEY_LEN);
 
-#if defined __clang__
-#pragma unroll 16
-#elif defined __GNUG__
-#pragma GCC unroll 16
-#pragma GCC ivdep
-#endif
-  for (size_t i = 0; i < 16; i++) {
-    const size_t off0 = i << 1;
-    const size_t off1 = 32ul ^ off0;
+  if ((dlen == 0) && (mlen == 0)) [[unlikely]] {
+    state[31] ^= (1 << 5);
+    photon_common::gen_tag<TAG_LEN>(state, tag_);
 
-    state[off0] = nonce[i] & photon::LS4B;
-    state[off0 ^ 1] = nonce[i] >> 4;
-
-    state[off1] = key[i] & photon::LS4B;
-    state[off1 ^ 1] = key[i] >> 4;
-  }
-
-  if ((dlen == 0ul) && (mlen == 0ul)) {
-    state[63] ^= 1 << 1;
-    gen_tag<16ul>(state, tag_);
-
-    bool flg = false;
-    for (size_t i = 0; i < 16; i++) {
-      flg |= tag[i] ^ tag_[i];
-    }
-
-    return !flg;
+    return verify_tag(tag, tag_);
   }
 
   const bool f0 = mlen > 0;
   const bool f1 = (dlen & (RATE - 1)) == 0;
-
-  const uint8_t C0 = (f0 && f1) ? 1 : f0 ? 2 : f1 ? 3 : 4;
-
   const bool f2 = dlen > 0;
   const bool f3 = (mlen & (RATE - 1)) == 0;
 
+  const uint8_t C0 = (f0 && f1) ? 1 : f0 ? 2 : f1 ? 3 : 4;
   const uint8_t C1 = (f2 && f3) ? 1 : f2 ? 2 : f3 ? 5 : 6;
 
-  if (dlen > 0) {
-    absorb<RATE>(state, data, dlen, C0);
+  if (dlen > 0) [[likely]] {
+    photon_common::absorb<RATE>(state, data, dlen, C0);
   }
 
-  if (mlen > 0) {
-    for (size_t i = 0; i < mlen; i += RATE) {
+  if (mlen > 0) [[likely]] {
+    for (size_t off = 0; off < mlen; off += RATE) {
       photon::photon256(state);
-      inv_rho<RATE>(state, enc + i, txt + i, std::min(RATE, mlen - i));
+
+      const auto len = std::min(RATE, mlen - off);
+      photon_common::inv_rho<RATE>(state, enc + off, txt + off, len);
     }
 
-    const uint8_t y = (state[63] << 4) | (state[62] & photon::LS4B);
-    const uint8_t w = y ^ (C1 << 5);
-
-    state[62] = w & photon::LS4B;
-    state[63] = w >> 4;
+    state[31] ^= (C1 << 5);
   }
 
-  gen_tag<16ul>(state, tag_);
+  photon_common::gen_tag<TAG_LEN>(state, tag_);
+  const auto flg = verify_tag(tag, tag_);
+  std::memset(txt, 0, !flg * mlen);
 
-  bool flg = false;
-  for (size_t i = 0; i < 16; i++) {
-    flg |= tag[i] ^ tag_[i];
-  }
-
-  return !flg;
+  return flg;
 }
 
 }

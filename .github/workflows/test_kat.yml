@@ -1,4 +1,4 @@
-name: Test against Photon-Beetle Known Answer Tests on Github
+name: Test Photon-Beetle AEAD and Hashing using Known Answer Tests
 
 on:
   push:
@@ -14,10 +14,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Setup compiler
-      run: sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10; sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9
+      run: |
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9
     - name: Install Python dependencies
       run: python3 -m pip install -r wrapper/python/requirements.txt --user
     - name: Execute tests
-      run: make test_kat
-    - name: Clean it up
-      run: make clean
+      run: make
