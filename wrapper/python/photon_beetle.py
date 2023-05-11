@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-'''
+"""
   Before using `photon_beetle` library module, make sure you've run
   `make lib` and generated shared library object, which is loaded
   here; then all function calls are forwarded to respective C++
@@ -9,40 +9,30 @@
   Author: Anjan Roy <hello@itzmeanjan.in>
 
   Project: https://github.com/itzmeanjan/photon-beetle
-'''
+"""
 
 from typing import Tuple
-import ctypes as ct
-import numpy as np
+from ctypes import CDLL, c_size_t, c_char_p, c_bool, create_string_buffer
 from posixpath import exists, abspath
 
-SO_PATH: str = abspath('../libphoton-beetle.so')
-assert exists(SO_PATH), 'Use `make lib` to generate shared library object !'
+SO_PATH: str = abspath("../libphoton-beetle.so")
+assert exists(SO_PATH), "Use `make lib` to generate shared library object !"
 
-SO_LIB: ct.CDLL = ct.CDLL(SO_PATH)
-
-u8 = np.uint8
-len_t = ct.c_size_t
-uint8_tp = np.ctypeslib.ndpointer(dtype=u8, ndim=1, flags='CONTIGUOUS')
-bool_t = ct.c_bool
+SO_LIB: CDLL = CDLL(SO_PATH)
 
 
 def photon_beetle_hash(msg: bytes) -> bytes:
-    '''
+    """
     Given a N ( >= 0 ) -bytes input message, this function computes 32 -bytes
     Photon-Beetle-Hash digest
-    '''
-    m_len = len(msg)
-    msg_ = np.frombuffer(msg, dtype=u8)
-    digest = np.empty(32, dtype=u8)
+    """
+    digest = create_string_buffer(32)
 
-    args = [uint8_tp, len_t, uint8_tp]
+    args = [c_char_p, c_size_t, c_char_p]
     SO_LIB.photon_beetle_hash.argtypes = args
+    SO_LIB.photon_beetle_hash(msg, len(msg), digest)
 
-    SO_LIB.photon_beetle_hash(msg_, m_len, digest)
-
-    digest_ = digest.tobytes()
-    return digest_
+    return digest.raw
 
 
 def photon_beetle_32_encrypt(
@@ -56,27 +46,25 @@ def photon_beetle_32_encrypt(
     assert len(key) == 16, "Photon-Beetle-AEAD[32] takes 16 -bytes secret key !"
     assert len(nonce) == 16, "Photon-Beetle-AEAD[32] takes 16 -bytes nonce !"
 
-    ad_len = len(data)
-    ct_len = len(text)
+    enc = create_string_buffer(len(text))
+    tag = create_string_buffer(16)
 
-    key_ = np.frombuffer(key, dtype=u8)
-    nonce_ = np.frombuffer(nonce, dtype=u8)
-    data_ = np.frombuffer(data, dtype=u8)
-    text_ = np.frombuffer(text, dtype=u8)
-    enc = np.empty(ct_len, dtype=u8)
-    tag = np.empty(16, dtype=u8)
-
-    args = [uint8_tp, uint8_tp, uint8_tp, len_t,
-            uint8_tp, uint8_tp, len_t, uint8_tp]
+    args = [
+        c_char_p,
+        c_char_p,
+        c_char_p,
+        c_size_t,
+        c_char_p,
+        c_char_p,
+        c_size_t,
+        c_char_p,
+    ]
     SO_LIB.photon_beetle_32_encrypt.argtypes = args
+    SO_LIB.photon_beetle_32_encrypt(
+        key, nonce, data, len(data), text, enc, len(text), tag
+    )
 
-    SO_LIB.photon_beetle_32_encrypt(key_, nonce_, data_, ad_len,
-                                    text_, enc, ct_len, tag)
-
-    enc_ = enc.tobytes()
-    tag_ = tag.tobytes()
-
-    return enc_, tag_
+    return enc.raw, tag.raw
 
 
 def photon_beetle_32_decrypt(
@@ -85,7 +73,7 @@ def photon_beetle_32_decrypt(
     """
     Decrypts M ( >=0 ) -many cipher text bytes, consuming 16 -bytes secret key,
     16 -bytes public message nonce, 16 -bytes authentication tag & N ( >=0 ) -bytes
-    associated data, while producing boolean flag denoting verification status ( which 
+    associated data, while producing boolean flag denoting verification status ( which
     must hold truth value, check before consuming decrypted output bytes ) &
     M -bytes plain text ( in order )
     """
@@ -93,27 +81,26 @@ def photon_beetle_32_decrypt(
     assert len(nonce) == 16, "Photon-Beetle-AEAD[32] takes 16 -bytes nonce !"
     assert len(tag) == 16, "Photon-Beetle-AEAD[32] takes 16 -bytes authentication tag !"
 
-    ad_len = len(data)
-    ct_len = len(enc)
+    dec = create_string_buffer(len(enc))
 
-    key_ = np.frombuffer(key, dtype=u8)
-    nonce_ = np.frombuffer(nonce, dtype=u8)
-    tag_ = np.frombuffer(tag, dtype=u8)
-    data_ = np.frombuffer(data, dtype=u8)
-    enc_ = np.frombuffer(enc, dtype=u8)
-    dec = np.empty(ct_len, dtype=u8)
-
-    args = [uint8_tp, uint8_tp, uint8_tp,
-            uint8_tp, len_t, uint8_tp, uint8_tp, len_t]
+    args = [
+        c_char_p,
+        c_char_p,
+        c_char_p,
+        c_char_p,
+        c_size_t,
+        c_char_p,
+        c_char_p,
+        c_size_t,
+    ]
     SO_LIB.photon_beetle_32_decrypt.argtypes = args
-    SO_LIB.photon_beetle_32_decrypt.restype = bool_t
+    SO_LIB.photon_beetle_32_decrypt.restype = c_bool
 
-    f = SO_LIB.photon_beetle_32_decrypt(key_, nonce_, tag_, data_,
-                                        ad_len, enc_, dec, ct_len)
+    f = SO_LIB.photon_beetle_32_decrypt(
+        key, nonce, tag, data, len(data), enc, dec, len(enc)
+    )
 
-    dec_ = dec.tobytes()
-
-    return f, dec_
+    return f, dec.raw
 
 
 def photon_beetle_128_encrypt(
@@ -127,27 +114,25 @@ def photon_beetle_128_encrypt(
     assert len(key) == 16, "Photon-Beetle-AEAD[128] takes 16 -bytes secret key !"
     assert len(nonce) == 16, "Photon-Beetle-AEAD[128] takes 16 -bytes nonce !"
 
-    ad_len = len(data)
-    ct_len = len(text)
+    enc = create_string_buffer(len(text))
+    tag = create_string_buffer(16)
 
-    key_ = np.frombuffer(key, dtype=u8)
-    nonce_ = np.frombuffer(nonce, dtype=u8)
-    data_ = np.frombuffer(data, dtype=u8)
-    text_ = np.frombuffer(text, dtype=u8)
-    enc = np.empty(ct_len, dtype=u8)
-    tag = np.empty(16, dtype=u8)
-
-    args = [uint8_tp, uint8_tp, uint8_tp, len_t,
-            uint8_tp, uint8_tp, len_t, uint8_tp]
+    args = [
+        c_char_p,
+        c_char_p,
+        c_char_p,
+        c_size_t,
+        c_char_p,
+        c_char_p,
+        c_size_t,
+        c_char_p,
+    ]
     SO_LIB.photon_beetle_128_encrypt.argtypes = args
+    SO_LIB.photon_beetle_128_encrypt(
+        key, nonce, data, len(data), text, enc, len(text), tag
+    )
 
-    SO_LIB.photon_beetle_128_encrypt(key_, nonce_, data_, ad_len,
-                                     text_, enc, ct_len, tag)
-
-    enc_ = enc.tobytes()
-    tag_ = tag.tobytes()
-
-    return enc_, tag_
+    return enc.raw, tag.raw
 
 
 def photon_beetle_128_decrypt(
@@ -156,36 +141,37 @@ def photon_beetle_128_decrypt(
     """
     Decrypts M ( >=0 ) -many cipher text bytes, consuming 16 -bytes secret key,
     16 -bytes public message nonce, 16 -bytes authentication tag & N ( >=0 ) -bytes
-    associated data, while producing boolean flag denoting verification status ( which 
+    associated data, while producing boolean flag denoting verification status ( which
     must hold truth value, check before consuming decrypted output bytes ) &
     M -bytes plain text ( in order )
     """
     assert len(key) == 16, "Photon-Beetle-AEAD[128] takes 16 -bytes secret key !"
     assert len(nonce) == 16, "Photon-Beetle-AEAD[128] takes 16 -bytes nonce !"
-    assert len(tag) == 16, "Photon-Beetle-AEAD[128] takes 16 -bytes authentication tag !"
+    assert (
+        len(tag) == 16
+    ), "Photon-Beetle-AEAD[128] takes 16 -bytes authentication tag !"
 
-    ad_len = len(data)
-    ct_len = len(enc)
+    dec = create_string_buffer(len(enc))
 
-    key_ = np.frombuffer(key, dtype=u8)
-    nonce_ = np.frombuffer(nonce, dtype=u8)
-    tag_ = np.frombuffer(tag, dtype=u8)
-    data_ = np.frombuffer(data, dtype=u8)
-    enc_ = np.frombuffer(enc, dtype=u8)
-    dec = np.empty(ct_len, dtype=u8)
-
-    args = [uint8_tp, uint8_tp, uint8_tp,
-            uint8_tp, len_t, uint8_tp, uint8_tp, len_t]
+    args = [
+        c_char_p,
+        c_char_p,
+        c_char_p,
+        c_char_p,
+        c_size_t,
+        c_char_p,
+        c_char_p,
+        c_size_t,
+    ]
     SO_LIB.photon_beetle_128_decrypt.argtypes = args
-    SO_LIB.photon_beetle_128_decrypt.restype = bool_t
+    SO_LIB.photon_beetle_128_decrypt.restype = c_bool
 
-    f = SO_LIB.photon_beetle_128_decrypt(key_, nonce_, tag_, data_,
-                                         ad_len, enc_, dec, ct_len)
+    f = SO_LIB.photon_beetle_128_decrypt(
+        key, nonce, tag, data, len(data), enc, dec, len(enc)
+    )
 
-    dec_ = dec.tobytes()
-
-    return f, dec_
+    return f, dec.raw
 
 
-if __name__ == '__main__':
-    print('Use `photon_beetle` as library module !')
+if __name__ == "__main__":
+    print("Use `photon_beetle` as library module !")
