@@ -17,14 +17,12 @@ jobs:
       run: |
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9
-    - name: Setup Python workspace
+    - name: Run tests
       run: |
         python -m venv wrapper/python
         source wrapper/python/bin/activate
         python -m pip install -r wrapper/python/requirements.txt
-    - name: Execute tests
-      run: make
-    - name: Clean up
-      run: |
+        make
         deactivate
-        make clean
+    - name: Clean up
+      run: make clean
