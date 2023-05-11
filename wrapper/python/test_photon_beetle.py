@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 
 import photon_beetle as pb
-import numpy as np
-
-u8 = np.uint8
 
 
 def test_photon_beetle_hash_kat():
@@ -27,19 +24,25 @@ def test_photon_beetle_hash_kat():
             msg = [i.strip() for i in msg.split("=")][-1]
             md = [i.strip() for i in md.split("=")][-1]
 
-            msg = bytes([
-                int(f"0x{msg[(i << 1): ((i+1) << 1)]}", base=16)
-                for i in range(len(msg) >> 1)
-            ])
+            msg = bytes(
+                [
+                    int(f"0x{msg[(i << 1): ((i+1) << 1)]}", base=16)
+                    for i in range(len(msg) >> 1)
+                ]
+            )
 
-            md = bytes([
-                int(f"0x{md[(i << 1): ((i+1) << 1)]}", base=16)
-                for i in range(len(md) >> 1)
-            ])
+            md = bytes(
+                [
+                    int(f"0x{md[(i << 1): ((i+1) << 1)]}", base=16)
+                    for i in range(len(md) >> 1)
+                ]
+            )
 
             digest = pb.photon_beetle_hash(msg)
 
-            assert (md == digest), f"[Photon-Beetle-Hash KAT {cnt}] expected {md}, found {digest} !"
+            assert (
+                md == digest
+            ), f"[Photon-Beetle-Hash KAT {cnt}] expected {md}, found {digest} !"
 
             fd.readline()
 
@@ -100,8 +103,12 @@ def test_photon_beetle_aead_32_kat():
             cipher, tag = pb.photon_beetle_32_encrypt(key, nonce, ad, pt)
             flag, text = pb.photon_beetle_32_decrypt(key, nonce, tag, ad, cipher)
 
-            assert (cipher + tag == ct), f"[Photon-Beetle-AEAD[32] KAT {cnt}] expected cipher to be 0x{ct.hex()}, found 0x{(cipher + tag).hex()} !"
-            assert (pt == text and flag), f"[Photon-Beetle-AEAD[32] KAT {cnt}] expected plain text 0x{pt.hex()}, found 0x{text.hex()} !"
+            assert (
+                cipher + tag == ct
+            ), f"[Photon-Beetle-AEAD[32] KAT {cnt}] expected cipher to be 0x{ct.hex()}, found 0x{(cipher + tag).hex()} !"
+            assert (
+                pt == text and flag
+            ), f"[Photon-Beetle-AEAD[32] KAT {cnt}] expected plain text 0x{pt.hex()}, found 0x{text.hex()} !"
 
             # don't need this line, so discard
             fd.readline()
@@ -162,13 +169,19 @@ def test_photon_beetle_aead_128_kat():
 
             cipher, tag = pb.photon_beetle_128_encrypt(key, nonce, ad, pt)
             flag, text = pb.photon_beetle_128_decrypt(key, nonce, tag, ad, cipher)
-            
-            assert (cipher + tag == ct), f"[Photon-Beetle-AEAD[128] KAT {cnt}] expected cipher to be 0x{ct.hex()}, found 0x{(cipher + tag).hex()} !"
-            assert (pt == text and flag), f"[Photon-Beetle-AEAD[128] KAT {cnt}] expected plain text 0x{pt.hex()}, found 0x{text.hex()} !"
+
+            assert (
+                cipher + tag == ct
+            ), f"[Photon-Beetle-AEAD[128] KAT {cnt}] expected cipher to be 0x{ct.hex()}, found 0x{(cipher + tag).hex()} !"
+            assert (
+                pt == text and flag
+            ), f"[Photon-Beetle-AEAD[128] KAT {cnt}] expected plain text 0x{pt.hex()}, found 0x{text.hex()} !"
 
             # don't need this line, so discard
             fd.readline()
 
 
-if __name__ == '__main__':
-    print('Use `pytest` for driving Photon-Beetle tests against Known Answer Tests ( KAT ) !')
+if __name__ == "__main__":
+    print(
+        "Use `pytest` for driving Photon-Beetle tests against Known Answer Tests ( KAT ) !"
+    )
