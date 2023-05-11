@@ -13,7 +13,7 @@ namespace photon_utils {
 //
 // Taken from
 // https://github.com/itzmeanjan/xoodyak/blob/89b3427/include/utils.hpp#L14-L28
-static inline constexpr uint32_t
+inline constexpr uint32_t
 bswap32(const uint32_t a)
 {
 #if defined __GNUG__
@@ -26,7 +26,7 @@ bswap32(const uint32_t a)
 
 // Given a bytearray of length N, this function converts it to human readable
 // hex string of length N << 1 | N >= 0
-static inline const std::string
+inline const std::string
 to_hex(const uint8_t* const bytes, const size_t len)
 {
   std::stringstream ss;
@@ -40,7 +40,7 @@ to_hex(const uint8_t* const bytes, const size_t len)
 }
 
 // Generates N -many random bytes | N >= 0
-static inline void
+inline void
 random_data(uint8_t* const data, const size_t len)
 {
   std::random_device rd;

@@ -21,7 +21,7 @@ constexpr size_t TAG_LEN = 16ul;
 // tag ( computed during decryption ), this routine performs a byte-wise match
 // between those two byte arrays and returns boolean truth value if they match.
 // Otherwise it returns false.
-inline static bool
+inline bool
 verify_tag(const uint8_t* const __restrict expected, // 16 -bytes
            const uint8_t* const __restrict computed  // 16 -bytes
 )

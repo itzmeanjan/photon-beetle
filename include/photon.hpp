@@ -363,7 +363,7 @@ mix_column_serial(uint8_t* const __restrict state)
 
 // Photon256 permutation composed of 12 rounds, applied on a state matrix of
 // dimension 8x4, see chapter 2 ( on page 2 ) of the specification
-inline static void
+inline void
 photon256(uint8_t* const __restrict state)
 {
   for (size_t i = 0; i < ROUNDS; i++) {
