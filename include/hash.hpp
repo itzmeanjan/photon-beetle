@@ -17,7 +17,7 @@ constexpr size_t DIGEST_LEN = 32ul;
 // See `PHOTON-Beetle-Hash[r](M)` algorithm defined in figure 3.6 of
 // Photon-Beetle specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
-inline static void
+inline void
 hash(const uint8_t* const __restrict msg, // input message
      const size_t mlen,                   // len(msg) >= 0
      uint8_t* const __restrict digest     // 32 -bytes digest

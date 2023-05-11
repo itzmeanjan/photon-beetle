@@ -9,14 +9,14 @@ static_assert(__SIZEOF_INT128__ == 16, "128 -bit unsigned integer is needed !");
 using uint128_t = unsigned __int128;
 
 // Compile-time check for ensuring that RATE ∈ {4, 16}
-inline static consteval bool
+consteval bool
 check_rate(const size_t rate)
 {
   return (rate == 4) || (rate == 16);
 }
 
 // Compile-time check for ensuring that OUT ∈ {16, 32}
-inline static consteval bool
+consteval bool
 check_out(const size_t out)
 {
   return (out == 16) || (out == 32);

@@ -13,6 +13,7 @@ clean:
 
 format:
 	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i --style=Mozilla
+	python3 -m black wrapper/python/*.py
 
 test_kat:
 	bash test_kat.sh

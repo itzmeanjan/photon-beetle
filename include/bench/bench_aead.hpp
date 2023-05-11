@@ -34,10 +34,8 @@ aead_encrypt(benchmark::State& state)
     benchmark::DoNotOptimize(key);
     benchmark::DoNotOptimize(nonce);
     benchmark::DoNotOptimize(data);
-    benchmark::DoNotOptimize(dlen);
     benchmark::DoNotOptimize(txt);
     benchmark::DoNotOptimize(enc);
-    benchmark::DoNotOptimize(mlen);
     benchmark::DoNotOptimize(tag);
     benchmark::ClobberMemory();
   }
@@ -101,10 +99,8 @@ aead_decrypt(benchmark::State& state)
     benchmark::DoNotOptimize(nonce);
     benchmark::DoNotOptimize(tag);
     benchmark::DoNotOptimize(data);
-    benchmark::DoNotOptimize(dlen);
     benchmark::DoNotOptimize(enc);
     benchmark::DoNotOptimize(dec);
-    benchmark::DoNotOptimize(mlen);
     benchmark::ClobberMemory();
   }
 

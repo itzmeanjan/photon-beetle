@@ -9,15 +9,20 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
-    - name: Setup compiler
+    - name: Setup C++ compiler
       run: |
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9
-    - name: Install Python dependencies
-      run: python3 -m pip install -r wrapper/python/requirements.txt --user
-    - name: Execute tests
-      run: make
+    - name: Run tests
+      run: |
+        python -m venv wrapper/python
+        source wrapper/python/bin/activate
+        python -m pip install -r wrapper/python/requirements.txt
+        make
+        deactivate
+    - name: Clean up
+      run: make clean

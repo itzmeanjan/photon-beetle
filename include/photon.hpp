@@ -2,6 +2,7 @@
 #include "utils.hpp"
 #include <array>
 #include <bit>
+#include <cstdint>
 #include <cstring>
 
 #if defined __SSSE3__
@@ -41,15 +42,6 @@ constexpr std::array<uint32_t, 96> RC{
   11, 10, 8,  12, 4,  5,  7,  3,  6,  7,  5, 1,  9,  8,  10, 14, 12, 13, 15, 11,
   3,  2,  0,  4,  9,  8,  10, 14, 6,  7,  5, 1,  2,  3,  1,  5,  13, 12, 14, 10,
   5,  4,  6,  2,  10, 11, 9,  13, 10, 11, 9, 13, 5,  4,  6,  2
-};
-
-// M^8 = Serial[2, 4, 2, 11, 2, 8, 5, 6] ^ 8 | Serial[...] is defined in
-// section 1.1 of the specification
-constexpr std::array<uint8_t, 64> M8{
-  2,  4,  2,  11, 2,  8, 5,  6,  12, 9,  8,  13, 7,  7,  5,  2,
-  4,  4,  13, 13, 9,  4, 13, 9,  1,  6,  5,  1,  12, 13, 15, 14,
-  15, 12, 9,  13, 14, 5, 14, 13, 9,  14, 5,  15, 4,  12, 9,  6,
-  12, 2,  2,  10, 3,  1, 1,  14, 15, 1,  13, 10, 5,  10, 2,  3
 };
 
 // Compile-time compute 8 -bit S-box table from 4 -bit S-box table
@@ -117,6 +109,68 @@ constexpr std::array<uint8_t, 256> SBOX = compute_8bit_sbox();
 // multiply a with b s.t. a, b ∈ GF(2^4), look up what's the value stored at
 // index (a*16 + b) of this array.
 constexpr std::array<uint8_t, 256> GF16_MUL_TAB = compute_gf16_mul_table();
+
+// Given a 8x8 matrix M s.t. its elements ∈ GF(2^4), this compile time
+// executable routine is used for squaring M i.e. returning M' <- M x M s.t. M'
+// is a 8x8 matrix over GF(2^4), meaning the matrix multiplication is performed
+// over GF(2^4), using pre-computed multiplication lookup table.
+constexpr std::array<uint8_t, 64>
+gf16_matrix_square(std::array<uint8_t, 64> mat)
+{
+  std::array<uint8_t, 64> res{};
+
+#if defined __clang__
+#pragma clang loop unroll(enable)
+#elif defined __GNUG__
+#pragma GCC ivdep
+#pragma GCC unroll 8
+#endif
+  for (size_t i = 0; i < 8; i++) {
+
+#if defined __clang__
+#pragma clang loop unroll(enable)
+#elif defined __GNUG__
+#pragma GCC ivdep
+#pragma GCC unroll 8
+#endif
+    for (size_t k = 0; k < 8; k++) {
+#if defined __clang__
+#pragma clang loop unroll(enable)
+#elif defined __GNUG__
+#pragma GCC ivdep
+#pragma GCC unroll 8
+#endif
+      for (size_t j = 0; j < 8; j++) {
+        const uint8_t idx = (mat[i * 8 + k] << 4) | (mat[(k * 8) + j] & LS4B);
+        res[i * 8 + j] ^= GF16_MUL_TAB[idx];
+      }
+    }
+  }
+
+  return res;
+}
+
+// Given a serial matrix M <- Serial[2, 4, 2, 11, 2, 8, 5, 6] as it's defined in
+// section 1.1 of the specification, this compile-time executable routine is
+// used for raising M to its 8th power, by repeated squaring, returning M^8.
+constexpr std::array<uint8_t, 64>
+compute_M8()
+{
+  std::array<uint8_t, 64> M{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,  0, 0, 0, 0,
+                             0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,  1, 0, 0, 0,
+                             0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,  0, 0, 1, 0,
+                             0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 2, 11, 2, 8, 5, 6 };
+
+  auto M2 = gf16_matrix_square(M);
+  auto M4 = gf16_matrix_square(M2);
+  auto M8 = gf16_matrix_square(M4);
+
+  return M8;
+}
+
+// Compile-time computed M^8 = Serial[2, 4, 2, 11, 2, 8, 5, 6] ^ 8 | Serial[...]
+// is defined in section 1.1 of the specification.
+constexpr std::array<uint8_t, 64> M8 = compute_M8();
 
 // Add fixed constants to the cells of first column of 8x4 permutation state,
 // see figure 2.1 of the specification
@@ -309,7 +363,7 @@ mix_column_serial(uint8_t* const __restrict state)
 
 // Photon256 permutation composed of 12 rounds, applied on a state matrix of
 // dimension 8x4, see chapter 2 ( on page 2 ) of the specification
-inline static void
+inline void
 photon256(uint8_t* const __restrict state)
 {
   for (size_t i = 0; i < ROUNDS; i++) {
