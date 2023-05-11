@@ -6,7 +6,7 @@
 namespace bench_photon_beetle {
 
 // Benchmarks Photon256 permutation routine
-void
+inline void
 permute(benchmark::State& state)
 {
   uint8_t pstate[32];
